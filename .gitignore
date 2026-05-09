@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# AIFI generated artifacts (regenerable from `python -m src.pipeline`)
+outputs/
+!outputs/.gitkeep
+
+# TEP raw data and local parquet cache (large; not versioned)
+dataset/

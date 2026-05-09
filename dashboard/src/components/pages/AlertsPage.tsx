@@ -1,0 +1,217 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, Filter, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { GlassPanel } from "@/components/dashboard/GlassPanel";
+import { INCIDENT_SUBSYSTEMS } from "@/lib/incidents";
+import { severityBadgeClass } from "@/lib/mockTelemetry";
+import { usePlantSimulation } from "@/context/PlantSimulationContext";
+import type { IncidentRecord, Severity } from "@/lib/types";
+
+const SEVERITY_OPTIONS: (Severity | "ALL")[] = [
+  "ALL",
+  "CRITICAL",
+  "HIGH",
+  "MEDIUM",
+  "LOW",
+];
+
+export function AlertsPage() {
+  const { incidents } = usePlantSimulation();
+  const [sev, setSev] = useState<Severity | "ALL">("ALL");
+  const [subsystem, setSubsystem] = useState<string>("ALL");
+  const [q, setQ] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    return incidents.filter((i) => {
+      if (sev !== "ALL" && i.severity !== sev) return false;
+      if (subsystem !== "ALL" && i.subsystem !== subsystem) return false;
+      if (q.trim()) {
+        const s = `${i.title} ${i.diagnosis} ${i.recommendedAction}`.toLowerCase();
+        if (!s.includes(q.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [incidents, sev, subsystem, q]);
+
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((a, b) => b.ts.getTime() - a.ts.getTime()),
+    [filtered],
+  );
+
+  return (
+    <div className="px-3 py-4 sm:px-4 lg:px-6">
+      <header className="mb-6">
+        <h2 className="font-[family-name:var(--font-orbitron)] text-xl font-semibold uppercase tracking-[0.14em] text-slate-100">
+          Alerts & incidents
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm text-slate-500">
+          Industrial SOC view — active warnings, historical incidents, and AI
+          diagnoses with operator guidance.
+        </p>
+      </header>
+
+      <GlassPanel
+        title="Incident filters"
+        subtitle="Narrow by severity, subsystem, or free-text search"
+        accent="blue"
+        delay={0}
+      >
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <label className="flex flex-1 flex-col gap-1 sm:min-w-[140px]">
+            <span className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-slate-500">
+              <Filter className="h-3 w-3" /> Severity
+            </span>
+            <select
+              value={sev}
+              onChange={(e) => setSev(e.target.value as Severity | "ALL")}
+              className="rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100"
+            >
+              {SEVERITY_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-1 flex-col gap-1 sm:min-w-[180px]">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500">
+              Subsystem
+            </span>
+            <select
+              value={subsystem}
+              onChange={(e) => setSubsystem(e.target.value)}
+              className="rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100"
+            >
+              <option value="ALL">All subsystems</option>
+              {INCIDENT_SUBSYSTEMS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex min-w-[200px] flex-1 flex-col gap-1">
+            <span className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-slate-500">
+              <Search className="h-3 w-3" /> Search
+            </span>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Title, diagnosis, action…"
+              className="rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600"
+            />
+          </label>
+        </div>
+      </GlassPanel>
+
+      <div className="mt-4 space-y-3">
+        <p className="text-[11px] uppercase tracking-widest text-slate-500">
+          {sorted.length} incident{sorted.length === 1 ? "" : "s"} shown
+        </p>
+        {sorted.map((inc, idx) => (
+          <IncidentCard
+            key={inc.id}
+            inc={inc}
+            index={idx}
+            expanded={expanded === inc.id}
+            onToggle={() =>
+              setExpanded((e) => (e === inc.id ? null : inc.id))
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IncidentCard({
+  inc,
+  index,
+  expanded,
+  onToggle,
+}: {
+  inc: IncidentRecord;
+  index: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const time = inc.ts.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+      className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-transparent backdrop-blur-xl shadow-[0_20px_60px_-40px_rgba(0,0,0,0.8)]"
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-start gap-3 p-4 text-left"
+      >
+        <motion.div
+          animate={
+            inc.severity === "CRITICAL"
+              ? { boxShadow: ["0 0 0 0 transparent", "0 0 24px 2px rgba(248,113,113,0.4)", "0 0 0 0 transparent"] }
+              : {}
+          }
+          transition={{ duration: 2, repeat: Infinity }}
+          className={`mt-0.5 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-widest ${severityBadgeClass(inc.severity)}`}
+        >
+          {inc.severity}
+        </motion.div>
+        <div className="min-w-0 flex-1">
+          <p className="font-[family-name:var(--font-orbitron)] text-sm font-semibold text-slate-50">
+            {inc.title}
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500">
+            {time} · {inc.subsystem}
+          </p>
+        </div>
+        <ChevronDown
+          className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-white/[0.06] bg-black/25"
+          >
+            <div className="space-y-3 p-4 text-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-slate-500">
+                  AI diagnosis
+                </p>
+                <p className="mt-1 text-slate-300">{inc.diagnosis}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-amber-400/90">
+                  Recommended action
+                </p>
+                <p className="mt-1 font-medium text-amber-100/95">
+                  {inc.recommendedAction}
+                </p>
+              </div>
+              {inc.faultId && (
+                <p className="text-[10px] text-slate-600">
+                  Fault class ID: {inc.faultId}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.article>
+  );
+}
