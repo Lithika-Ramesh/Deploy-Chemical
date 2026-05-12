@@ -25,8 +25,6 @@ This document describes what the **codebase actually implements** for the Tennes
 
 ---
 
-
-
 ---
 
 ## Multi-class classification (flowchart Stage 2a) — did you solve it?
@@ -63,14 +61,16 @@ So: **Stage 2b is only partially aligned** — useful for demos/UI, but **not fu
 
 The flowchart suggests **risk = model confidence × fault severity weighting** (high/med/low).
 
-**In code:**
+**Now implemented in code:**
 
-- You have **confidence** (max probability of predicted class) and **discrete severity** from `FAULT_CATALOG`, plus `severity_rank` for ordering.
-- There is **no single combined “risk score”** field in `FactoryAlert` that multiplies confidence by a severity weight to produce High/Med/Low in one number (unless you add it).
+- Backend alerts now compute a fused **`risk_score`** in `src/simulation.py`:
+  - `risk_score = confidence × severity_weight`
+- Severity weighting is explicit in config (`src/config.py` via `RISK_SEVERITY_WEIGHT`):
+  - `NONE=0.00, LOW=0.35, MEDIUM=0.60, HIGH=0.85, CRITICAL=1.00`
+- Alerts also include **`risk_level`** (`LOW`/`MEDIUM`/`HIGH`) via threshold mapping in config (`get_risk_level`).
+- API responses from `/predict` and `/simulate/{fault_id}` include these fields automatically because they return `FactoryAlert` dictionaries.
 
-The dashboard may show labels like “maintenance risk” using **mock** logic — treat that as **UI/demo**, not necessarily the same as a trained risk fusion model.
-
-So: **Stage 3 is conceptual / partially reflected** (ingredients exist; the fused risk score is not the main deliverable of the Python pipeline).
+So: **Stage 3 is complete in the Python backend path** (explicit fusion + output fields).
 
 ---
 
@@ -85,11 +85,11 @@ So: **Stage 3 is conceptual / partially reflected** (ingredients exist; the fuse
 | **Stage 1: Binary fault / no fault**     | **Implicit only**              | Same multi-class model; no separate binary classifier.                                                      |
 | **Stage 2a: Multi-class fault type**     | **Yes (main ML contribution)** | RF + XGBoost, evaluation, API, alerts.                                                                      |
 | **Stage 2b: Health score from P(fault)** | **Partial / UI-leaning**       | Not the central definition in Python; dashboard uses mock-driven health display.                            |
-| **Stage 3: Risk score fusion**           | **Partial**                    | Confidence + severity exist; explicit fused risk score not the focus.                                       |
+| **Stage 3: Risk score fusion**           | **Yes**                        | `risk_score = confidence × severity_weight` with derived `risk_level` in `FactoryAlert`.                   |
 | Operator output (Streamlit)              | **Different stack**            | **FastAPI + Next.js dashboard** instead of Streamlit; same *role* in the architecture.                      |
 
 
-**One-line summary:** Your coding work **implements the data layer and preprocessing, plus the AI block that corresponds to Stage 2a (multi-class fault identification)**, with **Random Forest and XGBoost** as in the diagram, while **Stage 1 is merged into that single multi-class model** and **Stages 2b–3 are only partly realized** (mostly as confidence, catalog severity, and dashboard presentation).
+**One-line summary:** Your coding work implements the data layer and preprocessing plus **Stage 2a (multi-class fault identification)**, with **Stage 1 merged into the same multi-class model**, **Stage 3 now explicitly implemented as fused risk scoring in backend alerts**, and **Stage 2b still partially aligned** (dashboard health remains mostly mock/UI-driven unless separately wired to a backend `P(fault)` definition).
 
 ---
 

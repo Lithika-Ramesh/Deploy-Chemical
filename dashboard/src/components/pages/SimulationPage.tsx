@@ -229,7 +229,7 @@ export function SimulationPage() {
               <Stat
                 icon={<ShieldAlert className="h-4 w-4 text-amber-400" />}
                 label="Risk / severity"
-                value={`${insight.maintenanceRisk} · ${insight.severity}`}
+                value={`${(insight.riskScore * 100).toFixed(1)}% ${insight.riskLevel} · ${insight.severity}`}
               />
               <Stat
                 icon={<AlertTriangle className="h-4 w-4 text-red-400" />}

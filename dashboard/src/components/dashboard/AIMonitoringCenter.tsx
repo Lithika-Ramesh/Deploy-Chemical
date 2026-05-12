@@ -122,6 +122,12 @@ export function AIMonitoringCenter() {
             highlight="text-amber-200"
           />
           <Metric
+            icon={<AlertTriangle className="h-4 w-4 text-orange-400" />}
+            label="Risk score"
+            value={`${(insight.riskScore * 100).toFixed(1)}% · ${insight.riskLevel}`}
+            highlight="text-orange-200"
+          />
+          <Metric
             icon={<Clock3 className="h-4 w-4 text-emerald-400" />}
             label="Failure window"
             value={

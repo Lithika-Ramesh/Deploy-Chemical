@@ -115,6 +115,8 @@ def train_model(
     y_train: pd.Series,
     preprocessor: PreprocessingArtifacts,
     cfg: config.ModelConfig = config.DEFAULT_MODEL,
+    X_val: Optional[pd.DataFrame] = None,
+    y_val: Optional[pd.Series] = None,
 ) -> TrainedModel:
     """Encode labels, build the estimator, fit it, return a TrainedModel."""
     name = name.lower()
@@ -133,7 +135,24 @@ def train_model(
     logger.info("Training %s on X=%s y=%s (%d classes)…",
                 name, X_train.shape, y_train.shape, n_classes)
     t0 = time.perf_counter()
-    estimator.fit(X_train, y_enc)
+    metrics: Dict[str, Any] = {}
+    if name == "xgboost" and X_val is not None and y_val is not None:
+        y_val_enc = le.transform(y_val.values)
+        estimator.set_params(early_stopping_rounds=20)
+        estimator.fit(
+            X_train,
+            y_enc,
+            eval_set=[(X_val, y_val_enc)],
+            verbose=False,
+        )
+        ev = estimator.evals_result()
+        mlog = ev["validation_0"]["mlogloss"]
+        metrics["xgb_val_mlogloss_best"] = float(min(mlog))
+        metrics["xgb_val_mlogloss_final"] = float(mlog[-1])
+        if getattr(estimator, "best_iteration", None) is not None:
+            metrics["xgb_best_iteration"] = int(estimator.best_iteration)
+    else:
+        estimator.fit(X_train, y_enc)
     elapsed = time.perf_counter() - t0
     logger.info("Trained %s in %.1fs", name, elapsed)
 
@@ -145,6 +164,7 @@ def train_model(
         feature_columns=preprocessor.feature_columns,
         classes_=le.classes_,
         train_time_s=elapsed,
+        metrics=metrics,
     )
 
 
@@ -154,6 +174,10 @@ def train_all(
     y_train: pd.Series,
     preprocessor: PreprocessingArtifacts,
     cfg: config.ModelConfig = config.DEFAULT_MODEL,
+    X_val: Optional[pd.DataFrame] = None,
+    y_val: Optional[pd.Series] = None,
 ) -> Dict[str, TrainedModel]:
-    return {n: train_model(n, X_train, y_train, preprocessor, cfg)
-            for n in model_names}
+    return {
+        n: train_model(n, X_train, y_train, preprocessor, cfg, X_val, y_val)
+        for n in model_names
+    }

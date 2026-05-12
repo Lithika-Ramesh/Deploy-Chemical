@@ -5,13 +5,14 @@ roughly 5 million rows × 55 columns ≈ 2 GB of RAM). We therefore:
 
 1. Convert each ``.RData`` file to parquet on first use - the conversion
    is the slow step but only happens once.
-2. Read the parquet cache and randomly select ``train_runs_per_fault``
-   simulation runs per fault class. This produces a balanced, memory
-   friendly dataset that still covers every disturbance pattern.
-3. Drop the pre-injection samples from faulty simulations - in TEP the
-   disturbance is only introduced after sample 20 (training) or sample
-   160 (testing); earlier samples are genuine fault-free behaviour and
-   would otherwise corrupt the labels.
+2. Use **only** the faulty training + faulty testing archives (no
+   fault-free baselines merged in), drop pre-injection rows, then keep
+   rows with ``faultNumber > 0`` so the task is pure multi-class fault
+   discrimination among the 20 disturbance types.
+3. Read **metadata columns only** to choose simulation runs, then load sensor
+   rows for those runs via PyArrow row filters (avoids holding full ~10M×52
+   float matrices in RAM). Finally a stratified **70 / 15 / 15** train /
+   validation / test split at row level.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ from typing import Dict, Iterable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from . import config
 
@@ -74,27 +76,33 @@ def ensure_parquet_cache(force: bool = False) -> Dict[str, Path]:
 # ---------------------------------------------------------------------------
 @dataclass
 class TEPDataset:
-    """Container holding a usable train/test split of the TEP data."""
+    """Container holding train / validation / test splits (faulty TEP only)."""
     X_train: pd.DataFrame
     y_train: pd.Series
+    X_val:   pd.DataFrame
+    y_val:   pd.Series
     X_test:  pd.DataFrame
     y_test:  pd.Series
     meta_train: pd.DataFrame
+    meta_val:   pd.DataFrame
     meta_test:  pd.DataFrame
     feature_columns: list
 
     def class_distribution(self) -> pd.DataFrame:
         return pd.DataFrame({
             "train": self.y_train.value_counts().sort_index(),
+            "val":   self.y_val.value_counts().sort_index(),
             "test":  self.y_test.value_counts().sort_index(),
         }).fillna(0).astype(int)
 
     def summary(self) -> Dict[str, int]:
+        ys = pd.concat([self.y_train, self.y_val, self.y_test])
         return {
             "train_rows": len(self.X_train),
+            "val_rows":   len(self.X_val),
             "test_rows":  len(self.X_test),
             "n_features": len(self.feature_columns),
-            "n_classes":  int(pd.concat([self.y_train, self.y_test]).nunique()),
+            "n_classes":  int(ys.nunique()),
         }
 
 
@@ -108,6 +116,71 @@ def _sample_runs(df: pd.DataFrame, runs_per_fault: int, random_state: int) -> pd
         chosen = rng.choice(runs, size=n, replace=False)
         keep.append(grp[grp["simulationRun"].isin(chosen)])
     out = pd.concat(keep, ignore_index=True)
+    return out
+
+
+def _sample_run_keys_from_meta_halves(
+    train_meta: pd.DataFrame,
+    test_meta: pd.DataFrame,
+    runs_per_fault: int,
+    random_state: int,
+) -> pd.DataFrame:
+    """Pick (fault, source, run) keys using only skinny meta frames (low RAM)."""
+    rng = np.random.default_rng(random_state)
+    tr_raw = (
+        train_meta.groupby("faultNumber", sort=False)["simulationRun"]
+        .unique()
+        .to_dict()
+    )
+    te_raw = (
+        test_meta.groupby("faultNumber", sort=False)["simulationRun"]
+        .unique()
+        .to_dict()
+    )
+    tr_keys = {int(k): v for k, v in tr_raw.items()}
+    te_keys = {int(k): v for k, v in te_raw.items()}
+    faults = sorted(set(tr_keys) | set(te_keys))
+    rows = []
+    for fault in faults:
+        pool = (
+            [("faulty_training", int(r)) for r in tr_keys.get(fault, [])]
+            + [("faulty_testing", int(r)) for r in te_keys.get(fault, [])]
+        )
+        if not pool:
+            continue
+        n = min(runs_per_fault, len(pool))
+        pick = rng.choice(len(pool), size=n, replace=False)
+        for i in pick:
+            src, run = pool[i]
+            rows.append(
+                {"faultNumber": fault, "_tep_source": src, "simulationRun": run}
+            )
+    return pd.DataFrame(rows)
+
+
+def _load_parquet_rows_for_keys(
+    pq_path: Path,
+    split_label: str,
+    keys_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Read only simulation runs we need from one faulty parquet (PyArrow filters)."""
+    if keys_df.empty:
+        return pd.DataFrame()
+    parts: list[pd.DataFrame] = []
+    for fault_id, grp in keys_df.groupby("faultNumber", sort=False):
+        runs = [int(x) for x in grp["simulationRun"].unique()]
+        chunk = pd.read_parquet(
+            pq_path,
+            engine="pyarrow",
+            filters=[
+                ("faultNumber", "==", int(fault_id)),
+                ("simulationRun", "in", runs),
+            ],
+        )
+        chunk = _drop_pre_injection(chunk, split_label)
+        chunk = chunk.loc[chunk["faultNumber"] > 0]
+        parts.append(chunk)
+    out = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
     return out
 
 
@@ -125,55 +198,95 @@ def load_tep_dataset(
     force_rebuild: bool = False,
     only_faults: Optional[Iterable[int]] = None,
 ) -> TEPDataset:
-    """Build a memory-friendly TEP train/test dataset.
+    """Build a memory-friendly **fault-only** TEP dataset with 70/15/15 splits.
+
+    Uses ``TEP_Faulty_Training`` and ``TEP_Faulty_Testing`` only (no fault-free
+    archives). After pre-injection trimming, keeps ``faultNumber > 0`` so class
+    0 (normal) is excluded.
 
     Parameters
     ----------
     train_runs_per_fault, test_runs_per_fault
-        How many of the 500 simulation runs per fault class to retain.
+        Upper bound on simulation runs retained per fault class after pooling
+        both faulty archives; the larger of the two values is used.
     random_state
-        Seeds the run-selection RNG for reproducibility.
+        Seeds run-selection and stratified splitting.
     force_rebuild
         If True, regenerate the parquet cache from the original .RData files.
     only_faults
-        Optional iterable of fault numbers to restrict the dataset to (handy
-        for very fast smoke tests). ``None`` keeps all 21 classes.
+        Optional iterable of fault numbers to restrict to. ``None`` keeps all
+        active faults (1–20 by default).
     """
     paths = ensure_parquet_cache(force=force_rebuild)
 
-    logger.info("Loading parquet cache from %s", config.CACHE_DIR)
-    ff_train = pd.read_parquet(paths["fault_free_training"])
-    ff_test  = pd.read_parquet(paths["fault_free_testing"])
-    ft_train = pd.read_parquet(paths["faulty_training"])
-    ft_test  = pd.read_parquet(paths["faulty_testing"])
+    logger.info(
+        "Scanning faulty TEP parquet metadata only (then loading sampled runs) from %s",
+        config.CACHE_DIR,
+    )
+    meta_cols = list(config.META_COLUMNS)
+    ft_train_meta = pd.read_parquet(paths["faulty_training"], columns=meta_cols)
+    ft_test_meta = pd.read_parquet(paths["faulty_testing"], columns=meta_cols)
 
-    train_full = pd.concat([ff_train, ft_train], ignore_index=True)
-    test_full  = pd.concat([ff_test,  ft_test],  ignore_index=True)
-
-    train_full = _drop_pre_injection(train_full, "training")
-    test_full  = _drop_pre_injection(test_full,  "testing")
+    train_meta = _drop_pre_injection(ft_train_meta, "training")
+    test_meta = _drop_pre_injection(ft_test_meta, "testing")
+    train_meta = train_meta.loc[train_meta["faultNumber"] > 0].reset_index(drop=True)
+    test_meta = test_meta.loc[test_meta["faultNumber"] > 0].reset_index(drop=True)
 
     if only_faults is not None:
         only_faults = set(int(f) for f in only_faults)
-        train_full = train_full[train_full["faultNumber"].isin(only_faults)]
-        test_full  = test_full[test_full["faultNumber"].isin(only_faults)]
+        train_meta = train_meta[train_meta["faultNumber"].isin(only_faults)]
+        test_meta = test_meta[test_meta["faultNumber"].isin(only_faults)]
 
-    train = _sample_runs(train_full, train_runs_per_fault, random_state)
-    test  = _sample_runs(test_full,  test_runs_per_fault,  random_state + 1)
+    runs_budget = max(train_runs_per_fault, test_runs_per_fault)
+    run_keys = _sample_run_keys_from_meta_halves(
+        train_meta, test_meta, runs_budget, random_state,
+    )
+    tr_keys = run_keys[run_keys["_tep_source"] == "faulty_training"].drop(
+        columns=["_tep_source"],
+    )
+    te_keys = run_keys[run_keys["_tep_source"] == "faulty_testing"].drop(
+        columns=["_tep_source"],
+    )
+    sampled_tr = _load_parquet_rows_for_keys(
+        paths["faulty_training"], "training", tr_keys,
+    )
+    sampled_te = _load_parquet_rows_for_keys(
+        paths["faulty_testing"], "testing", te_keys,
+    )
+    sampled = pd.concat([sampled_tr, sampled_te], ignore_index=True)
 
     feature_cols = config.FEATURE_COLUMNS
-    X_train = train[feature_cols].reset_index(drop=True)
-    y_train = train[config.TARGET_COLUMN].astype(int).reset_index(drop=True)
-    X_test  = test[feature_cols].reset_index(drop=True)
-    y_test  = test[config.TARGET_COLUMN].astype(int).reset_index(drop=True)
-    meta_train = train[config.META_COLUMNS].reset_index(drop=True)
-    meta_test  = test[config.META_COLUMNS].reset_index(drop=True)
+    X = sampled[feature_cols].reset_index(drop=True)
+    y = sampled[config.TARGET_COLUMN].astype(int).reset_index(drop=True)
+    meta = sampled[config.META_COLUMNS].reset_index(drop=True)
 
-    logger.info("Final shapes: X_train=%s X_test=%s", X_train.shape, X_test.shape)
+    X_tr, X_te, y_tr, y_te, m_tr, m_te = train_test_split(
+        X, y, meta,
+        test_size=0.15,
+        random_state=random_state,
+        stratify=y,
+    )
+    val_ratio = 0.15 / (1.0 - 0.15)
+    X_train, X_val, y_train, y_val, meta_train, meta_val = train_test_split(
+        X_tr, y_tr, m_tr,
+        test_size=val_ratio,
+        random_state=random_state,
+        stratify=y_tr,
+    )
+
+    X_test = X_te.reset_index(drop=True)
+    y_test = y_te.reset_index(drop=True)
+    meta_test = m_te.reset_index(drop=True)
+
+    logger.info(
+        "Final shapes (70/15/15): train=%s val=%s test=%s",
+        X_train.shape, X_val.shape, X_test.shape,
+    )
     return TEPDataset(
         X_train=X_train, y_train=y_train,
-        X_test=X_test,   y_test=y_test,
-        meta_train=meta_train, meta_test=meta_test,
+        X_val=X_val, y_val=y_val,
+        X_test=X_test, y_test=y_test,
+        meta_train=meta_train, meta_val=meta_val, meta_test=meta_test,
         feature_columns=feature_cols,
     )
 

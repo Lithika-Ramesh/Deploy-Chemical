@@ -216,6 +216,23 @@ SEVERITY_RANK: Dict[str, int] = {
     "NONE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4,
 }
 
+# Stage 3 risk fusion config:
+# risk_score = confidence * severity_weight (0..1)
+RISK_SEVERITY_WEIGHT: Dict[str, float] = {
+    "NONE": 0.00,
+    "LOW": 0.35,
+    "MEDIUM": 0.60,
+    "HIGH": 0.85,
+    "CRITICAL": 1.00,
+}
+
+# Inclusive lower bounds for risk level labels.
+RISK_LEVEL_THRESHOLDS: Dict[str, float] = {
+    "LOW": 0.25,
+    "MEDIUM": 0.50,
+    "HIGH": 0.75,
+}
+
 
 def get_fault_label(fault_id: int) -> str:
     """Human-readable fault name for any TEP fault number."""
@@ -233,3 +250,12 @@ def get_recommended_action(fault_id: int) -> str:
 
 def get_plant_status(fault_id: int) -> str:
     return SEVERITY_TO_STATUS.get(get_severity(fault_id), "WARNING")
+
+
+def get_risk_level(risk_score: float) -> str:
+    """Map risk score (0..1) to a LOW/MEDIUM/HIGH level."""
+    if risk_score >= RISK_LEVEL_THRESHOLDS["HIGH"]:
+        return "HIGH"
+    if risk_score >= RISK_LEVEL_THRESHOLDS["MEDIUM"]:
+        return "MEDIUM"
+    return "LOW"
