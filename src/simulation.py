@@ -49,6 +49,8 @@ class FactoryAlert:
     confidence_pct: str        # e.g. "96%"
     severity: str
     severity_rank: int
+    risk_score: float
+    risk_level: str
     recommended_action: str
     description: str
     top_features: List[Dict[str, float]]
@@ -65,6 +67,7 @@ class FactoryAlert:
             f"Predicted Fault:     {self.predicted_fault}\n"
             f"Confidence:          {self.confidence_pct}\n"
             f"Severity:            {self.severity}\n"
+            f"Risk Score:          {self.risk_score:.3f} ({self.risk_level})\n"
             f"Recommended Action:  {self.recommended_action}"
         )
 
@@ -121,6 +124,8 @@ def build_alert(
         "severity": "MEDIUM", "action": "Investigate.",
         "description": "Unrecognised fault pattern.",
     })
+    severity_weight = config.RISK_SEVERITY_WEIGHT.get(catalog["severity"], 0.60)
+    risk_score = round(confidence * severity_weight, 4)
 
     return FactoryAlert(
         timestamp=(timestamp or datetime.now(timezone.utc)).isoformat(),
@@ -132,6 +137,8 @@ def build_alert(
         confidence_pct=f"{confidence*100:.1f}%",
         severity=catalog["severity"],
         severity_rank=config.SEVERITY_RANK[catalog["severity"]],
+        risk_score=risk_score,
+        risk_level=config.get_risk_level(risk_score),
         recommended_action=catalog["action"],
         description=catalog["description"],
         top_features=_top_contributing_features(features, model),

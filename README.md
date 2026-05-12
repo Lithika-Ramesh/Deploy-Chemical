@@ -216,6 +216,8 @@ Example response:
   "confidence_pct": "96.4%",
   "severity": "HIGH",
   "severity_rank": 3,
+  "risk_score": 0.8194,
+  "risk_level": "HIGH",
   "recommended_action": "Inspect reactor cooling water supply, heat-exchanger fouling, cooling tower.",
   "description": "Reactor cooling water inlet temperature step disturbance.",
   "top_features": [
@@ -239,6 +241,8 @@ expects:
 | `confidence` / `_pct`  | classifier probability (0..1 and "%")                   |
 | `severity`             | `NONE`/`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`                 |
 | `severity_rank`        | 0..4 (for colour coding)                                |
+| `risk_score`           | Stage-3 fused risk: `confidence × severity_weight`      |
+| `risk_level`           | `LOW` / `MEDIUM` / `HIGH` from `risk_score` thresholds  |
 | `recommended_action`   | written maintenance action                              |
 | `top_features`         | top contributing sensors with z-score & contribution    |
 | `timestamp`            | ISO-8601 UTC timestamp                                  |

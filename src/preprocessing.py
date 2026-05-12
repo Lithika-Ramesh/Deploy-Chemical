@@ -138,3 +138,32 @@ def preprocess_split(
 
     logger.info("Preprocessing complete: train=%s test=%s", X_train_p.shape, X_test_p.shape)
     return X_train_p, X_test_p, artifacts, report
+
+
+def preprocess_train_val_test(
+    X_train: pd.DataFrame,
+    X_val: pd.DataFrame,
+    X_test: pd.DataFrame,
+    feature_columns: List[str] | None = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, PreprocessingArtifacts, Dict[str, pd.DataFrame]]:
+    """Fit on train only; transform train, validation, and test (no leakage)."""
+    feature_columns = feature_columns or config.FEATURE_COLUMNS
+
+    report = {
+        "missing_train": audit_missing(X_train).to_frame("missing_rate"),
+        "outliers_train": audit_outliers(X_train),
+        "missing_val": audit_missing(X_val).to_frame("missing_rate"),
+        "outliers_val": audit_outliers(X_val),
+        "missing_test": audit_missing(X_test).to_frame("missing_rate"),
+        "outliers_test": audit_outliers(X_test),
+    }
+
+    X_train_p, artifacts = fit_preprocessor(X_train, feature_columns)
+    X_val_p = transform(X_val, artifacts)
+    X_test_p = transform(X_test, artifacts)
+
+    logger.info(
+        "Preprocessing complete: train=%s val=%s test=%s",
+        X_train_p.shape, X_val_p.shape, X_test_p.shape,
+    )
+    return X_train_p, X_val_p, X_test_p, artifacts, report

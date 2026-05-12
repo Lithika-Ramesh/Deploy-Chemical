@@ -34,17 +34,25 @@ def _save(fig: plt.Figure, name: str) -> Path:
 # ---------------------------------------------------------------------------
 # 1. Class distribution
 # ---------------------------------------------------------------------------
-def plot_class_distribution(y_train: pd.Series, y_test: pd.Series,
-                            filename: str = "01_class_distribution.png") -> Path:
-    counts = pd.DataFrame({
+def plot_class_distribution(
+    y_train: pd.Series,
+    y_test: pd.Series,
+    y_val: Optional[pd.Series] = None,
+    filename: str = "01_class_distribution.png",
+) -> Path:
+    parts = {
         "Train": y_train.value_counts().sort_index(),
-        "Test":  y_test.value_counts().sort_index(),
-    }).fillna(0).astype(int)
+        "Test": y_test.value_counts().sort_index(),
+    }
+    if y_val is not None:
+        parts["Val"] = y_val.value_counts().sort_index()
+    counts = pd.DataFrame(parts).fillna(0).astype(int)
     counts.index = [f"{i}\n{config.get_fault_label(i).split()[0]}" for i in counts.index]
 
+    colors = ["#2563eb", "#f97316", "#22c55e"][: counts.shape[1]]
     fig, ax = plt.subplots(figsize=(14, 6))
-    counts.plot(kind="bar", ax=ax, color=["#2563eb", "#f97316"], edgecolor="black")
-    ax.set_title("Sample distribution per fault class (train vs test)")
+    counts.plot(kind="bar", ax=ax, color=colors, edgecolor="black")
+    ax.set_title("Sample distribution per fault class (train / val / test)")
     ax.set_xlabel("Fault number")
     ax.set_ylabel("Number of samples")
     ax.tick_params(axis="x", rotation=45)
@@ -162,9 +170,10 @@ def plot_feature_variance(
 def run_full_eda(
     X_train: pd.DataFrame, y_train: pd.Series, meta_train: pd.DataFrame,
     X_test: pd.DataFrame, y_test: pd.Series,
+    y_val: Optional[pd.Series] = None,
 ) -> List[Path]:
     figures = []
-    figures.append(plot_class_distribution(y_train, y_test))
+    figures.append(plot_class_distribution(y_train, y_test, y_val))
     figures.append(plot_correlation_heatmap(X_train))
     figures.append(plot_sensor_trends(X_train, meta_train, y_train))
     figures.append(plot_pca(X_train, y_train))

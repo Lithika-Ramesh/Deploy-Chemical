@@ -35,10 +35,11 @@ from .evaluation import (
     pick_best_model,
     plot_model_comparison,
     save_evaluation_report,
+    write_training_summary,
 )
 from .explainability import compute_shap_summary, plot_feature_importance
 from .models import train_all
-from .preprocessing import preprocess_split
+from .preprocessing import preprocess_train_val_test
 from .simulation import generate_demo_alerts
 
 
@@ -60,10 +61,10 @@ def _parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument("--train-runs", type=int,
                    default=config.DEFAULT_SAMPLING.train_runs_per_fault,
-                   help="Simulation runs per fault used for training.")
+                   help="Max simulation runs per fault kept when pooling faulty archives.")
     p.add_argument("--test-runs", type=int,
                    default=config.DEFAULT_SAMPLING.test_runs_per_fault,
-                   help="Simulation runs per fault used for testing.")
+                   help="With --train-runs, the larger of the two caps runs per fault.")
     p.add_argument("--models", nargs="+",
                    default=["random_forest", "xgboost"],
                    choices=["random_forest", "xgboost"],
@@ -102,29 +103,49 @@ def run_pipeline(args: argparse.Namespace) -> dict:
 
     # 2. Preprocessing -----------------------------------------------------
     log.info("[2/7] Preprocessing (impute + scale + audit)…")
-    X_train_p, X_test_p, artifacts, audit = preprocess_split(ds.X_train, ds.X_test)
+    X_train_p, X_val_p, X_test_p, artifacts, audit = preprocess_train_val_test(
+        ds.X_train, ds.X_val, ds.X_test,
+    )
     audit["missing_train"].to_csv(config.REPORT_DIR / "audit_missing_train.csv")
     audit["outliers_train"].to_csv(config.REPORT_DIR / "audit_outliers_train.csv")
 
     # 3. EDA ---------------------------------------------------------------
     if not args.skip_eda:
         log.info("[3/7] Running exploratory data analysis…")
-        run_full_eda(X_train_p, ds.y_train, ds.meta_train, X_test_p, ds.y_test)
+        run_full_eda(
+            X_train_p, ds.y_train, ds.meta_train,
+            X_test_p, ds.y_test,
+            y_val=ds.y_val,
+        )
     else:
         log.info("[3/7] Skipping EDA (per CLI flag).")
 
     # 4. Training ----------------------------------------------------------
     log.info("[4/7] Training models: %s", args.models)
-    trained = train_all(args.models, X_train_p, ds.y_train, artifacts)
+    trained = train_all(
+        args.models, X_train_p, ds.y_train, artifacts,
+        X_val=X_val_p, y_val=ds.y_val,
+    )
     for m in trained.values():
         m.save()
 
     # 5. Evaluation --------------------------------------------------------
     log.info("[5/7] Evaluating models…")
-    results: List[EvaluationResult] = [evaluate_model(m, ds.X_test, ds.y_test)
-                                       for m in trained.values()]
+    results: List[EvaluationResult] = [
+        evaluate_model(
+            m, ds.X_test, ds.y_test,
+            X_train=ds.X_train, y_train=ds.y_train,
+            X_val=ds.X_val, y_val=ds.y_val,
+        )
+        for m in trained.values()
+    ]
     save_evaluation_report(results)
     plot_model_comparison(results)
+    write_training_summary(
+        ds.summary(),
+        results,
+        model_training_metrics={n: m.metrics for n, m in trained.items()},
+    )
     best = pick_best_model(results)
     log.info("Best model -> %s (f1_macro=%.4f)", best.name, best.f1_macro)
 
@@ -133,7 +154,7 @@ def run_pipeline(args: argparse.Namespace) -> dict:
     best_model = trained[best.name]
     plot_feature_importance(best_model, top_n=25)
     if not args.skip_shap:
-        compute_shap_summary(best_model, X_test_p)
+        compute_shap_summary(best_model, ds.X_test)
     else:
         log.info("Skipping SHAP analysis (per CLI flag).")
 
@@ -148,6 +169,8 @@ def run_pipeline(args: argparse.Namespace) -> dict:
     manifest = {
         "best_model": best.name,
         "best_model_path": str(config.MODEL_DIR / f"{best.name}.joblib"),
+        "dataset": ds.summary(),
+        "split_policy": "70/15/15 stratified; faulty TEP only; faultNumber > 0",
         "results": [r.to_summary() for r in results],
         "feature_columns": ds.feature_columns,
         "fault_catalog": config.FAULT_CATALOG,
