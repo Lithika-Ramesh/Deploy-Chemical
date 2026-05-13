@@ -139,9 +139,13 @@ function IncidentCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const time = inc.ts.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+  const time = inc.ts.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 
   return (

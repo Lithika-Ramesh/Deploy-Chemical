@@ -14,7 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Root-level setuptools/distutils `lib/` only (do not ignore `dashboard/src/lib/`)
+/lib/
 lib64/
 parts/
 sdist/

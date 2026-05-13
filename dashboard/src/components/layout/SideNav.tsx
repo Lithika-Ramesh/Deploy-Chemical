@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import {
   Activity,
   AlertTriangle,
+  BellRing,
   Cpu,
   LayoutDashboard,
+  Network,
   Siren,
   Wrench,
 } from "lucide-react";
@@ -14,7 +16,9 @@ import { usePathname } from "next/navigation";
 
 const links = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/architecture", label: "Architecture", icon: Network },
   { href: "/simulation", label: "Fault simulation", icon: Siren },
+  { href: "/alarm-xmeas13", label: "Alarm lab (xmeas_13)", icon: BellRing },
   { href: "/alerts", label: "Alerts & incidents", icon: AlertTriangle },
   { href: "/maintenance", label: "Maintenance", icon: Wrench },
   { href: "/analytics", label: "AI analytics", icon: Activity },

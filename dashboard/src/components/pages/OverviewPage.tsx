@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { AIMonitoringCenter } from "@/components/dashboard/AIMonitoringCenter";
 import { MaintenanceEvents } from "@/components/dashboard/MaintenanceEvents";
+import { OverviewStatTiles } from "@/components/dashboard/OverviewStatTiles";
 import { ProcessFlowVisual } from "@/components/dashboard/ProcessFlowVisual";
 
 const SensorCharts = dynamic(
@@ -36,14 +37,16 @@ export function OverviewPage() {
         </p>
       </div>
 
-      <div className="grid flex-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-4 2xl:col-span-3">
+      <OverviewStatTiles />
+
+      <div className="grid min-w-0 flex-1 gap-4 xl:grid-cols-12">
+        <div className="min-w-0 xl:col-span-4 2xl:col-span-3">
           <ProcessFlowVisual />
         </div>
-        <div className="xl:col-span-4 2xl:col-span-4">
+        <div className="min-w-0 xl:col-span-4 2xl:col-span-4">
           <AIMonitoringCenter />
         </div>
-        <div className="xl:col-span-4 2xl:col-span-5">
+        <div className="min-w-0 xl:col-span-4 2xl:col-span-5">
           <SensorCharts />
         </div>
       </div>
