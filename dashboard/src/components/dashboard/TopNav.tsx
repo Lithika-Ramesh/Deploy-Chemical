@@ -23,10 +23,13 @@ function formatTime(d: Date) {
   });
 }
 
+/** Clock only updates after mount so SSR HTML matches the client (avoids hydration mismatch). */
 function useClock() {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const tick = () => setNow(new Date());
+    tick();
+    const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, []);
   return now;
@@ -105,8 +108,8 @@ export function TopNav() {
         )}
 
         <div className="ml-auto flex items-center gap-2 sm:ml-0">
-          <span className="hidden font-mono text-[11px] text-cyan-200/80 sm:inline">
-            {formatTime(now)}
+          <span className="hidden min-w-[9ch] tabular-nums font-mono text-[11px] text-cyan-200/80 sm:inline-block">
+            {now ? formatTime(now) : "\u00a0"}
           </span>
           <Link
             href="/simulation"

@@ -37,7 +37,7 @@ export default function RootLayout({
       lang="en"
       className={`${orbitron.variable} ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#020617]">
+      <body className="min-h-full bg-[#020617]" suppressHydrationWarning>
         <PlantSimulationProvider>{children}</PlantSimulationProvider>
       </body>
     </html>

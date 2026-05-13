@@ -30,9 +30,14 @@ import type {
   SensorPoint,
   ShapFeature,
 } from "@/lib/types";
-import { fetchApiHealth, isApiConfigured } from "@/lib/api";
+import type { ParsedPipelineSummary } from "@/lib/pipelineManifest";
+import { parsePipelineManifest } from "@/lib/pipelineManifest";
+import { fetchApiHealth, fetchMetrics, isApiConfigured } from "@/lib/api";
 
 const HISTORY_CAP = 48;
+/** Mock telemetry refresh when no fault sim is running (lighter laptops). */
+const IDLE_TICK_MS = 4000;
+const ACTIVE_TICK_MS = 1000;
 
 type PlantSimulationContextValue = {
   simulationConfig: SimulationConfig;
@@ -61,6 +66,8 @@ type PlantSimulationContextValue = {
   confidenceHistory: number[];
   anomalyHistory: number[];
   apiReachable: boolean | null;
+  /** Parsed `GET /metrics` manifest when `NEXT_PUBLIC_AIFI_API_URL` is set and the API returns pipeline JSON. */
+  pipelineManifest: ParsedPipelineSummary | null;
   notificationCount: number;
 };
 
@@ -89,17 +96,12 @@ export function PlantSimulationProvider({
     }),
   );
   const [history, setHistory] = useState<SensorPoint[]>([]);
-  const [events, setEvents] = useState<PlantEvent[]>(() =>
-    seedFaultEvents({
-      mode: "normal",
-      faultId: "reactor_cooling",
-      severity: 1,
-      emergency: false,
-    }),
-  );
   const [confidenceHistory, setConfidenceHistory] = useState<number[]>([]);
   const [anomalyHistory, setAnomalyHistory] = useState<number[]>([]);
   const [apiReachable, setApiReachable] = useState<boolean | null>(null);
+  const [pipelineManifestRaw, setPipelineManifestRaw] = useState<
+    Record<string, unknown> | null
+  >(null);
 
   const simulationConfig: SimulationConfig = useMemo(
     () => ({
@@ -109,6 +111,11 @@ export function PlantSimulationProvider({
       emergency: emergencyMode,
     }),
     [simulationRunning, selectedFaultId, severity, emergencyMode],
+  );
+
+  const pipelineManifest = useMemo(
+    () => parsePipelineManifest(pipelineManifestRaw),
+    [pipelineManifestRaw],
   );
 
   const incidents = useMemo(
@@ -128,6 +135,11 @@ export function PlantSimulationProvider({
 
   const faultProbabilities = useMemo(
     () => buildFaultProbabilities(simulationConfig),
+    [simulationConfig],
+  );
+
+  const events = useMemo(
+    () => seedFaultEvents(simulationConfig),
     [simulationConfig],
   );
 
@@ -175,7 +187,6 @@ export function PlantSimulationProvider({
       emergency: false,
     };
     setSnapshot(buildSnapshot(normal));
-    setEvents(seedFaultEvents(normal));
     setConfidenceHistory([]);
     setAnomalyHistory([]);
   }, [selectedFaultId]);
@@ -189,44 +200,46 @@ export function PlantSimulationProvider({
   }, []);
 
   useEffect(() => {
-    setEvents(seedFaultEvents(simulationConfig));
-  }, [simulationConfig]);
-
-  useEffect(() => {
-    if (!isApiConfigured()) {
-      setApiReachable(null);
-      return;
-    }
+    if (!isApiConfigured()) return;
     let cancelled = false;
-    fetchApiHealth().then((h) => {
-      if (!cancelled) setApiReachable(h?.status === "ok");
-    });
+    void (async () => {
+      const [h, metrics] = await Promise.all([
+        fetchApiHealth(),
+        fetchMetrics(),
+      ]);
+      if (cancelled) return;
+      setApiReachable(h?.status === "ok");
+      setPipelineManifestRaw(metrics);
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
 
   useEffect(() => {
+    const intervalMs = simulationRunning ? ACTIVE_TICK_MS : IDLE_TICK_MS;
+
     const id = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+
       const frozen = paused && simulationRunning;
-      if (!frozen) {
-        advanceMockTick();
-      }
+      if (frozen) return;
+
+      advanceMockTick();
       setTick(getSimulationTick());
 
       const next = buildSnapshot(simulationConfig);
       setSnapshot(next);
 
-      if (!frozen) {
-        setHistory((prev) => [...prev, next.sensors].slice(-HISTORY_CAP));
-        setConfidenceHistory((prev) =>
-          [...prev, next.insight.confidencePct].slice(-72),
-        );
-        setAnomalyHistory((prev) =>
-          [...prev, next.sensors.anomalyScore].slice(-72),
-        );
-      }
-    }, 1000);
+      setHistory((prev) => [...prev, next.sensors].slice(-HISTORY_CAP));
+      setConfidenceHistory((prev) =>
+        [...prev, next.insight.confidencePct].slice(-72),
+      );
+      setAnomalyHistory((prev) =>
+        [...prev, next.sensors.anomalyScore].slice(-72),
+      );
+    }, intervalMs);
+
     return () => window.clearInterval(id);
   }, [paused, simulationRunning, simulationConfig]);
 
@@ -258,6 +271,7 @@ export function PlantSimulationProvider({
       confidenceHistory,
       anomalyHistory,
       apiReachable,
+      pipelineManifest,
       notificationCount,
     }),
     [
@@ -284,6 +298,7 @@ export function PlantSimulationProvider({
       confidenceHistory,
       anomalyHistory,
       apiReachable,
+      pipelineManifest,
       notificationCount,
     ],
   );

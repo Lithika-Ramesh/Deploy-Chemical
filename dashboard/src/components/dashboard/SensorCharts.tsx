@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo, type ReactNode } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 import {
   Area,
   CartesianGrid,
@@ -32,10 +32,13 @@ function buildChartRows(points: SensorPoint[]) {
 }
 
 export function SensorCharts() {
+  const anomalyFillId = useId().replace(/:/g, "");
   const { history, snapshot, simulationRunning } = usePlantSimulation();
   const data = useMemo(() => {
+    const raw =
+      history.length > 0 ? [...history] : [snapshot.sensors];
     const pts =
-      history.length > 0 ? history : [snapshot.sensors, snapshot.sensors];
+      raw.length >= 2 ? raw : [raw[0] ?? snapshot.sensors, raw[0] ?? snapshot.sensors];
     return buildChartRows(pts);
   }, [history, snapshot.sensors]);
 
@@ -46,7 +49,7 @@ export function SensorCharts() {
       accent="emerald"
       delay={0.12}
     >
-      <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+      <div className="grid min-w-0 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <ChartCard
           title="Reactor temperature"
           unit="°C"
@@ -106,7 +109,11 @@ export function SensorCharts() {
           delay={0.16}
           className="sm:col-span-2 xl:col-span-2"
         >
-          <AnomalyChart data={data} fault={simulationRunning} />
+          <AnomalyChart
+            data={data}
+            fault={simulationRunning}
+            fillGradientId={anomalyFillId}
+          />
         </ChartCard>
       </div>
     </GlassPanel>
@@ -142,7 +149,7 @@ function ChartCard({
         <span className="text-[9px] text-slate-500">{unit}</span>
       </div>
       <div
-        className={`h-[132px] w-full rounded-lg ${
+        className={`h-[132px] min-h-[132px] min-w-0 w-full rounded-lg ${
           fault ? "ring-1 ring-orange-500/30" : ""
         }`}
       >
@@ -164,7 +171,7 @@ function MiniLine({
   fault: boolean;
 }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" minHeight={120}>
       <LineChart data={data} margin={{ top: 6, right: 8, left: -18, bottom: 0 }}>
         <CartesianGrid {...grid} strokeDasharray="3 6" />
         <XAxis dataKey="i" hide />
@@ -184,8 +191,7 @@ function MiniLine({
           stroke={color}
           strokeWidth={fault ? 2.4 : 1.8}
           dot={false}
-          isAnimationActive
-          animationDuration={400}
+          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -195,15 +201,17 @@ function MiniLine({
 function AnomalyChart({
   data,
   fault,
+  fillGradientId,
 }: {
   data: ReturnType<typeof buildChartRows>;
   fault: boolean;
+  fillGradientId: string;
 }) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" minHeight={120}>
       <LineChart data={data} margin={{ top: 6, right: 8, left: -18, bottom: 0 }}>
         <defs>
-          <linearGradient id="anomFill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={fillGradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#f97316" stopOpacity={0.35} />
             <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
           </linearGradient>
@@ -228,10 +236,9 @@ function AnomalyChart({
           type="monotone"
           dataKey="anomalyScore"
           stroke="#fb923c"
-          fill="url(#anomFill)"
+          fill={`url(#${fillGradientId})`}
           strokeWidth={2}
-          isAnimationActive
-          animationDuration={400}
+          isAnimationActive={false}
         />
         <Line
           type="monotone"
@@ -239,6 +246,7 @@ function AnomalyChart({
           stroke="#fbbf24"
           strokeWidth={1.2}
           dot={false}
+          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>

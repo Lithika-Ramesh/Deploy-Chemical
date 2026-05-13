@@ -39,11 +39,19 @@ export function AnalyticsChartsPanel() {
         anomaly: 0.05 + Math.sin(i / 4) * 0.02,
       }));
     }
-    return Array.from({ length: n }, (_, i) => ({
+    const rows = Array.from({ length: n }, (_, i) => ({
       t: i,
       confidence: confidenceHistory[i] ?? confidenceHistory.at(-1) ?? 94,
       anomaly: anomalyHistory[i] ?? anomalyHistory.at(-1) ?? 0.06,
     }));
+    if (rows.length < 2) {
+      const r = rows[0] ?? { t: 0, confidence: 94, anomaly: 0.06 };
+      return [
+        { ...r, t: 0 },
+        { ...r, t: 1 },
+      ];
+    }
+    return rows;
   }, [confidenceHistory, anomalyHistory]);
 
   const shapBars = useMemo(
@@ -99,7 +107,7 @@ export function AnalyticsChartsPanel() {
                 stroke="#22d3ee"
                 strokeWidth={2}
                 dot={false}
-                animationDuration={500}
+                isAnimationActive={false}
               />
               <Line
                 yAxisId="r"
@@ -109,7 +117,7 @@ export function AnalyticsChartsPanel() {
                 stroke="#fb923c"
                 strokeWidth={2}
                 dot={false}
-                animationDuration={500}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -146,7 +154,13 @@ export function AnalyticsChartsPanel() {
                   fontSize: 11,
                 }}
               />
-              <Bar dataKey="pct" name="%" fill="#34d399" radius={[0, 6, 6, 0]} />
+              <Bar
+                dataKey="pct"
+                name="%"
+                fill="#34d399"
+                radius={[0, 6, 6, 0]}
+                isAnimationActive={false}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -182,7 +196,13 @@ export function AnalyticsChartsPanel() {
                   fontSize: 11,
                 }}
               />
-              <Bar dataKey="shap" name="Importance ×100" fill="#38bdf8" radius={[0, 6, 6, 0]} />
+              <Bar
+                dataKey="shap"
+                name="Importance ×100"
+                fill="#38bdf8"
+                radius={[0, 6, 6, 0]}
+                isAnimationActive={false}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
