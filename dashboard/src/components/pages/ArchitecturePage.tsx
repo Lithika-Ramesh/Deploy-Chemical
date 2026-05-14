@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Radio } from "lucide-react";
 import Link from "next/link";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
+import { useNotebookDashboard } from "@/context/NotebookDashboardContext";
 
 /** Matches `DashboardBackground` base layer */
 const DASH_BG = "none";
@@ -16,6 +17,8 @@ const XMEAS_13_HOTSPOT = {
 } as const;
 
 export function ArchitecturePage() {
+  const { bundle } = useNotebookDashboard();
+
   return (
     <div className="px-3 py-4 sm:px-4 lg:px-6">
       <header className="mb-6">
@@ -23,10 +26,9 @@ export function ArchitecturePage() {
           Process architecture
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
-          Tennessee Eastman P&amp;ID. The highlighted instrument is{" "}
-          <span className="font-mono text-cyan-200/80">xmeas_13</span>{" "}
-          (separator pressure, kPa gauge — same signal as the alarm lab). Click
-          the marker to open the notebook-aligned alarm view.
+          Tennessee Eastman P&amp;ID. The highlighted instrument is separator
+          pressure (kPa gauge — same signal as the alarm lab). Click the marker
+          to open the notebook-aligned alarm view.
         </p>
       </header>
 
@@ -81,10 +83,10 @@ export function ArchitecturePage() {
                     maxWidth: 56,
                     transform: "translate(-50%, -50%)",
                   }}
-                  aria-label="Open alarm lab for xmeas_13 separator pressure"
-                  title="xmeas_13 — open alarm lab"
+                  aria-label="Open alarm lab for separator pressure"
+                  title="Separator pressure — open alarm lab"
                 >
-                  <span className="sr-only">Open alarm lab for xmeas_13</span>
+                  <span className="sr-only">Open alarm lab for separator pressure</span>
                 </Link>
               </div>
             </div>
@@ -109,6 +111,25 @@ export function ArchitecturePage() {
           </figcaption>
         </figure>
       </GlassPanel>
+
+      {bundle?.architecture ? (
+        <GlassPanel
+          title="Classifier context (notebooks)"
+          subtitle="Same P&amp;ID view as above — this panel is metadata only"
+          accent="emerald"
+          delay={0.06}
+          className="mt-4"
+        >
+          <div className="space-y-2 p-4 text-sm text-slate-300">
+            <p className="font-[family-name:var(--font-orbitron)] text-xs font-semibold uppercase tracking-wider text-emerald-200/90">
+              {bundle.architecture.headline}
+            </p>
+            <p className="text-xs leading-relaxed text-slate-400">
+              {bundle.architecture.detail}
+            </p>
+          </div>
+        </GlassPanel>
+      ) : null}
     </div>
   );
 }

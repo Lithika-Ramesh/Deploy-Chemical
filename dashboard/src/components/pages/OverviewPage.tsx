@@ -2,19 +2,21 @@
 
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import { AIMonitoringCenter } from "@/components/dashboard/AIMonitoringCenter";
+import { AIStatusNarrative } from "@/components/overview/AIStatusNarrative";
 import { MaintenanceEvents } from "@/components/dashboard/MaintenanceEvents";
 import { OverviewStatTiles } from "@/components/dashboard/OverviewStatTiles";
 import { ProcessFlowVisual } from "@/components/dashboard/ProcessFlowVisual";
 
-const SensorCharts = dynamic(
+const LiveSensorCharts = dynamic(
   () =>
-    import("@/components/dashboard/SensorCharts").then((m) => m.SensorCharts),
+    import("@/components/overview/LiveSensorCharts").then(
+      (m) => m.LiveSensorCharts,
+    ),
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-xs uppercase tracking-widest text-slate-500">
-        Loading telemetry…
+      <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-xs text-slate-500">
+        Preparing live charts…
       </div>
     ),
   },
@@ -32,8 +34,11 @@ export function OverviewPage() {
           Operations overview
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
-          Central command view for the Tennessee Eastman surrogate twin — process
-          topology, AI inference, and live historian channels.
+          A clear, operator-first view of plant health, AI monitoring, and key
+          process traces. Panels load optional metrics from{" "}
+          <span className="font-mono text-cyan-200/80">public/data/</span> when
+          you publish JSON there; otherwise the UI uses built-in demonstration
+          values so the board always looks complete.
         </p>
       </div>
 
@@ -44,10 +49,10 @@ export function OverviewPage() {
           <ProcessFlowVisual />
         </div>
         <div className="min-w-0 xl:col-span-4 2xl:col-span-4">
-          <AIMonitoringCenter />
+          <AIStatusNarrative />
         </div>
         <div className="min-w-0 xl:col-span-4 2xl:col-span-5">
-          <SensorCharts />
+          <LiveSensorCharts />
         </div>
       </div>
 

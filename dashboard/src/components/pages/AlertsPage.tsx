@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
 import { INCIDENT_SUBSYSTEMS } from "@/lib/incidents";
 import { severityBadgeClass } from "@/lib/mockTelemetry";
+import { useNotebookIncidents } from "@/context/NotebookDashboardContext";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 import type { IncidentRecord, Severity } from "@/lib/types";
 
@@ -18,7 +19,9 @@ const SEVERITY_OPTIONS: (Severity | "ALL")[] = [
 ];
 
 export function AlertsPage() {
-  const { incidents } = usePlantSimulation();
+  const { incidents: simIncidents } = usePlantSimulation();
+  const nbIncidents = useNotebookIncidents();
+  const incidents = nbIncidents.length > 0 ? nbIncidents : simIncidents;
   const [sev, setSev] = useState<Severity | "ALL">("ALL");
   const [subsystem, setSubsystem] = useState<string>("ALL");
   const [q, setQ] = useState("");
@@ -51,6 +54,13 @@ export function AlertsPage() {
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
           Industrial SOC view — active warnings, historical incidents, and AI
           diagnoses with operator guidance.
+          {nbIncidents.length > 0 ? (
+            <span className="mt-1 block text-emerald-200/80">
+              Showing incidents from{" "}
+              <span className="font-mono text-emerald-100/90">tep_notebook_dashboard.json</span>{" "}
+              (04a/04b export).
+            </span>
+          ) : null}
         </p>
       </header>
 

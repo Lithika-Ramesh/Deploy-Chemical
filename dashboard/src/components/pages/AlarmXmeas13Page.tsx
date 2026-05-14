@@ -221,7 +221,8 @@ export function AlarmXmeas13Page() {
             xmeas_13 alarm lab
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-500">
-            Deadband-latched alarm with tail-widened σ band, ROC pre-alarm, and
+            Deadband-latched alarm with tail-widened σ band, rate-of-change
+            pre-alarm, and
             optional browser beep while latched — same logic as{" "}
             <span className="font-mono text-slate-400">
               alarm_management_xmeas13.ipynb
@@ -297,7 +298,7 @@ export function AlarmXmeas13Page() {
         {rocOnly && !latched && (
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/35 bg-orange-500/10 px-2.5 py-1 text-[11px] font-medium text-orange-200">
             <Radio className="h-3.5 w-3.5" />
-            ROC pre-alarm (in-band)
+            Rate-of-change pre-alarm (in-band)
           </span>
         )}
         <span className="font-mono text-[11px] text-slate-500">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DM_Sans, Geist_Mono, Orbitron } from "next/font/google";
+import { NotebookDashboardProvider } from "@/context/NotebookDashboardContext";
 import { PlantSimulationProvider } from "@/context/PlantSimulationContext";
 import "./globals.css";
 
@@ -38,7 +39,9 @@ export default function RootLayout({
       className={`${orbitron.variable} ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#020617]" suppressHydrationWarning>
-        <PlantSimulationProvider>{children}</PlantSimulationProvider>
+        <PlantSimulationProvider>
+          <NotebookDashboardProvider>{children}</NotebookDashboardProvider>
+        </PlantSimulationProvider>
       </body>
     </html>
   );

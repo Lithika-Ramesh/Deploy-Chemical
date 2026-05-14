@@ -118,7 +118,13 @@ By default `next start` serves on http://localhost:3000 (unless `PORT` is set).
 
 ---
 
-## 8. Local development (hot reload, no production build)
+## 8. Vercel (monorepo)
+
+The Next.js app is in **`dashboard\`**, not the repository root. In the Vercel project, set **Root Directory** to **`dashboard`** (same folder as `dashboard\package.json`). If Root Directory is wrong, the build fails with “No Next.js version detected”. After changing it, trigger a new deployment. Official reference: [Using Monorepos](https://vercel.com/docs/monorepos).
+
+---
+
+## 9. Local development (hot reload, no production build)
 
 ```powershell
 cd C:\Users\LithiChang\groupAIFL\AIFI-group_project\dashboard
@@ -129,7 +135,7 @@ Then open http://localhost:3000 (or the port Next prints).
 
 ---
 
-## 9. Optional: Jupyter notebook
+## 10. Optional: Jupyter notebook
 
 From project root with venv activated:
 
@@ -140,7 +146,7 @@ jupyter notebook notebooks\tep_pipeline.ipynb
 
 ---
 
-## Quick checklist
+## 11. Quick checklist
 
 | Step | What |
 |------|------|
@@ -151,9 +157,9 @@ jupyter notebook notebooks\tep_pipeline.ipynb
 
 ---
 
-## Troubleshooting
+## 12. Troubleshooting
 
 - **`ModuleNotFoundError` for `src` or `api`:** Start Uvicorn from the **repository root**, not from `api\` or `dashboard\`.
 - **API returns errors about missing models:** Run the pipeline (section 3) or confirm `outputs\models\` contains the expected `.joblib` files.
 
-For more detail on endpoints and artifacts, see `README.md`.
+For more detail on endpoints and artifacts, see `md/README.md`.

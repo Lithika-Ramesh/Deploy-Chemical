@@ -31,6 +31,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This app lives under `dashboard/` in a **monorepo**. On Vercel, open **Project → Settings → Build & Deployment → Root Directory**, set it to **`dashboard`**, then save and redeploy. That directory must be the one that contains this project’s `package.json` with `next` in `dependencies`; if Root Directory stays at the repo root, Vercel reports “No Next.js version detected”. See Vercel’s [Using Monorepos](https://vercel.com/docs/monorepos) and [Root Directory](https://vercel.com/docs/deployments/configure-a-build#root-directory).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For a default Next.js template deploy flow, see the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying).
