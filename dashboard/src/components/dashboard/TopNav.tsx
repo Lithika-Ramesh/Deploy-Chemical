@@ -6,7 +6,6 @@ import {
   Bell,
   Cpu,
   Factory,
-  Radio,
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
@@ -36,7 +35,7 @@ function useClock() {
 }
 
 export function TopNav() {
-  const { snapshot, apiReachable, notificationCount, simulationRunning } =
+  const { snapshot, notificationCount, simulationRunning } =
     usePlantSimulation();
   const { insight, systemHealthPct, aiOnline } = snapshot;
   const now = useClock();
@@ -98,14 +97,6 @@ export function TopNav() {
                 : "text-cyan-200"
           }
         />
-        {apiReachable !== null && (
-          <StatusChip
-            icon={<Radio className="h-3.5 w-3.5" />}
-            label="API"
-            value={apiReachable ? "LINKED" : "LOCAL"}
-            valueClass={apiReachable ? "text-emerald-300" : "text-slate-400"}
-          />
-        )}
 
         <div className="ml-auto flex items-center gap-2 sm:ml-0">
           <span className="hidden min-w-[9ch] tabular-nums font-mono text-[11px] text-cyan-200/80 sm:inline-block">

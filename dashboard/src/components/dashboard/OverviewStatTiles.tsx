@@ -81,8 +81,6 @@ export function OverviewStatTiles() {
     simulationRunning,
     paused,
     snapshot,
-    apiReachable,
-    pipelineManifest,
     tick,
   } = usePlantSimulation();
 
@@ -98,21 +96,9 @@ export function OverviewStatTiles() {
       ? "Paused"
       : "Live";
 
-  const apiLabel =
-    apiReachable === null ? "Mock only" : apiReachable ? "Backend OK" : "Offline";
-
+  const dataPlaneLabel = "Browser twin";
   const dataPlaneHint =
-    apiReachable === null
-      ? "Set NEXT_PUBLIC_AIFI_API_URL for /health + /metrics"
-      : !apiReachable
-        ? "API unreachable — check Uvicorn"
-        : pipelineManifest?.bestModel
-          ? `Manifest: ${pipelineManifest.bestModel}${
-              pipelineManifest.bestF1Macro != null
-                ? ` · F1macro ${pipelineManifest.bestF1Macro.toFixed(3)}`
-                : ""
-            }`
-          : "Linked — no manifest (run src.pipeline for /metrics)";
+    "In-memory demo telemetry — no external ML service required for this UI.";
 
   const bufferPct =
     HISTORY_CAP > 0 ? Math.round((history.length / HISTORY_CAP) * 100) : 0;
@@ -159,7 +145,7 @@ export function OverviewStatTiles() {
       />
       <Tile
         label="Data plane"
-        value={apiLabel}
+        value={dataPlaneLabel}
         hint={dataPlaneHint}
         icon={Activity}
         delay={0.2}

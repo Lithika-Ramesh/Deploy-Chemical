@@ -4,18 +4,7 @@ This document combines (1) where each menu’s analytics come from today and (2)
 
 **Primary mock pipeline:** `dashboard/src/context/PlantSimulationContext.tsx` drives timers and calls `buildSnapshot()`, `generateSensorRow()`, `seedFaultEvents()`, `buildIncidentLibrary()`, `buildMaintenanceRecommendations()`, `buildShapImportance()`, and `buildFaultProbabilities()` in `dashboard/src/lib/mockTelemetry.ts`, `dashboard/src/lib/incidents.ts`, and `dashboard/src/lib/maintenanceData.ts` (see imports in context). Catalog copy lives in `dashboard/src/lib/faultCatalog.ts`. UI types: `dashboard/src/lib/types.ts`.
 
-**Optional API:** `NEXT_PUBLIC_AIFI_API_URL` → `dashboard/src/lib/api.ts`. On load, `PlantSimulationContext.tsx` calls **`GET /health`** (TopNav API chip) and **`GET /metrics`** (same JSON as `outputs/reports/manifest.json` from `python -m src.pipeline` / `tep_pipeline.ipynb`). Parsed manifest is exposed as **`pipelineManifest`** and powers **Overview “Data plane” hints**, **AI analytics** KPIs + evaluation table + AI health copy, and a **Fault simulation** banner when the API is reachable. It does **not** replace mock sensor time series or chart trends yet. **`fetchMetrics`** is used from context (not only an unused import).
-
-### Changelog — pipeline manifest wiring (dashboard)
-
-| Change | Files |
-|--------|--------|
-| Parse `/metrics` manifest | `dashboard/src/lib/pipelineManifest.ts` |
-| Fetch `/health` + `/metrics` on mount when API URL set; expose `pipelineManifest` | `dashboard/src/context/PlantSimulationContext.tsx` |
-| Real held-out accuracy + feature count + evaluation table + dynamic AI health text | `dashboard/src/components/pages/AnalyticsPage.tsx` |
-| Data plane tile hint shows best model / F1 when manifest present | `dashboard/src/components/dashboard/OverviewStatTiles.tsx` |
-| Banner when trained model manifest available | `dashboard/src/components/pages/SimulationPage.tsx` |
-| **Unchanged** | **`AlarmXmeas13Page.tsx`** and alarm JSON/GIF flow |
+**Dashboard bundle:** The Next.js app does **not** call the Python FastAPI service. All pages run on **in-browser mock telemetry** unless you add new wiring (e.g. `fetch("/data/...json")`, SSE, or your own gateway). Training and batch reports still live in `src/` and notebooks; expose them to the UI via **static exports** under `dashboard/public/` or a separate API you choose to add.
 
 ---
 
@@ -27,7 +16,6 @@ This document combines (1) where each menu’s analytics come from today and (2)
 |----------|-------------|----------------|-----------------|
 | **TopNav** | Plant status, system health % | Mock twin | `TopNav.tsx` ← `snapshot` ← `buildSnapshot()` in `mockTelemetry.ts` |
 | **TopNav** | AI ONLINE | Constant | `buildSnapshot()` sets `aiOnline: true` |
-| **TopNav** | API LINKED / LOCAL (chip if configured) | HTTP | `PlantSimulationContext.tsx` → `fetchApiHealth()` in `api.ts` |
 | **TopNav** | Clock | Browser | `TopNav.tsx` (`useClock`) |
 | **TopNav** | Bell badge count | Derived mock | `notificationCount` in `PlantSimulationContext.tsx` |
 | **TopNav** | “Sim active” | UI state | `simulationRunning` |
@@ -42,7 +30,7 @@ This document combines (1) where each menu’s analytics come from today and (2)
 | **OverviewStatTiles** | Open incidents | Mock | `buildIncidentLibrary()` in `incidents.ts` |
 | **OverviewStatTiles** | Plant status / hint | Mock | `snapshot.insight` from `buildSnapshot()` |
 | **OverviewStatTiles** | Twin stream, tick, buffer % | Mock + UI | `PlantSimulationContext.tsx`; buffer uses `HISTORY_CAP` (48) in tiles |
-| **OverviewStatTiles** | Data plane label + hint | Env + HTTP + **pipeline manifest** | `apiReachable` + `pipelineManifest` from `GET /metrics` via `PlantSimulationContext.tsx` / `fetchMetrics` in `api.ts` |
+| **OverviewStatTiles** | Data plane label + hint | Copy | “Browser twin” — in-memory demo; no backend required |
 | **ProcessFlowVisual** | PFD colors / stress | Mock + catalog | `ProcessFlowVisual.tsx` + `FAULT_CATALOG[selectedFaultId].visual` |
 | **AIMonitoringCenter** | Confidence, severity, risk, TTF, actions, systems | Mock | `snapshot.insight` (`NORMAL_INSIGHT` / `buildFaultInsight()` in `mockTelemetry.ts`) |
 | **SensorCharts** | Temp, pressure, flow, vibration, anomaly series | Mock | `SensorCharts.tsx` ← `history` / `snapshot.sensors` ← `generateSensorRow()` |
@@ -62,7 +50,6 @@ This document combines (1) where each menu’s analytics come from today and (2)
 | Fault labels | Catalog | `SimulationPage.tsx` → `faultCatalog.ts` |
 | Controls (severity, emergency, start/pause/reset) | UI state | `PlantSimulationContext.tsx` |
 | Twin tick | Mock clock | `advanceMockTick()` / `getSimulationTick()` in `mockTelemetry.ts` |
-| **Pipeline model banner** | **`GET /metrics`** when best model present and API healthy | `SimulationPage.tsx` |
 | AI prediction stream (confidence, anomaly index, risk, latency, TTF, status) | Mock | `snapshot` from `buildSnapshot()` |
 | PFD + sensor charts | Mock | Same as overview |
 
@@ -92,11 +79,11 @@ This document combines (1) where each menu’s analytics come from today and (2)
 
 | Data / UI | Source today | Files / notes |
 |-----------|----------------|----------------|
-| KPI “Test accuracy (held-out)” / feature count | **FastAPI `/metrics`** when manifest parses; else mock formula | `AnalyticsPage.tsx` + `pipelineManifest` from context |
-| KPI prediction latency | Mock | `snapshot.predictionLatencyMs` (label notes twin estimate) |
+| KPI model accuracy (est.) | Mock formula | `AnalyticsPage.tsx` from `simulationConfig` |
+| KPI prediction latency | Mock | `snapshot.predictionLatencyMs` (twin estimate) |
+| KPI monitored features | Static | Default **52** (TEP convention) |
 | KPI high/critical incidents | Mock | `incidents` count |
-| **Multiclass evaluation table** | **`GET /metrics`** `results[]` when present | `AnalyticsPage.tsx` |
-| AI health panel copy | **Manifest** when present; else static placeholder | `AnalyticsPage.tsx` |
+| AI health panel copy | Static placeholder | `AnalyticsPage.tsx` |
 | Charts: confidence vs anomaly trend | Mock history | `AnalyticsChartsPanel.tsx` ← context histories |
 | Charts: fault probabilities | Mock | `buildFaultProbabilities()` in `mockTelemetry.ts` |
 | Charts: SHAP-style bars | Mock | `buildShapImportance()` in `mockTelemetry.ts` |
@@ -181,9 +168,9 @@ so `confidenceHistory` / `anomalyHistory` can be filled from a TSDB or batch job
 
 | Item | Replace with |
 |------|----------------|
-| “41 XMEAS” / default **52** feature KPI | Already overridden when **`pipelineManifest.featureCount`** is present (`GET /metrics`); fully custom counts still need config if schema changes. |
-| Analytics accuracy KPI | **Done when API + manifest:** held-out test accuracy from best model row; else mock formula. |
-| “SHAP stability 0.87” text | **Replaced when manifest present** with dataset / best-model summary; optional future: real drift index. |
+| “41 XMEAS” / **52** feature KPI | Config or manifest JSON you load into the app (e.g. from `outputs/reports/manifest.json` copied to `public/data/`) if feature count differs. |
+| Analytics accuracy KPI | Values from your pipeline export or inference service. |
+| “SHAP stability 0.87” text | Real drift / stability metrics or remove when you have live monitoring. |
 
 ### 11. Fault simulation (optional “real” mode)
 
@@ -209,9 +196,8 @@ Five streams (one gateway or multiple services):
 |------|-----------|
 | **Mock twin** | Most numbers on Overview, Simulation, Analytics charts, TopNav plant/health (from `mockTelemetry.ts` + context). |
 | **Mock libraries** | Incidents (`incidents.ts`), maintenance cards (`maintenanceData.ts`), events (`seedFaultEvents`). |
-| **Static / catalog** | `faultCatalog.ts`, architecture image + hotspot, overview “41”; analytics default **52** only when manifest has no `feature_columns`. |
-| **Static copy** | Analytics AI health placeholder only when **`pipelineManifest`** is null. |
-| **Optional HTTP** | **`/health`** (chip) + **`/metrics`** (multiclass manifest → context `pipelineManifest`). **`/predict`**, **`/simulate`**, **`/demo`** not yet consumed by Next.js pages. |
+| **Static / catalog** | `faultCatalog.ts`, architecture image + hotspot, overview “41”, analytics **52**. |
+| **Static copy** | Analytics AI health placeholder text until you wire real metrics. |
 | **File-backed (alarm lab)** | `public/data/alarm_xmeas13_series.json` + optional GIF. |
 
 ---

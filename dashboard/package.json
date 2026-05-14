@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "next build",
     "start": "next start",
     "lint": "eslint"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

@@ -1,0 +1,12 @@
+# Shrink Vercel uploads for this monorepo (dashboard is deployed; Python/data stay local/CI)
+.venv
+venv
+**/__pycache__
+**/*.pyc
+dataset
+outputs
+notebooks
+*.parquet
+*.RData
+.pytest_cache
+.mypy_cache
