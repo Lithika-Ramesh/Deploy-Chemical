@@ -34,13 +34,54 @@ function buildChartRows(points: SensorPoint[]) {
 
 export function SensorCharts() {
   const anomalyFillId = useId().replace(/:/g, "");
-  const { history, snapshot, simulationRunning } = usePlantSimulation();
+  const {
+    history,
+    snapshot,
+    simulationRunning,
+    fault13ReplayActive,
+    fault13ReplayPayload,
+    fault13ReplayIndex,
+  } = usePlantSimulation();
   const { bundle } = useNotebookDashboard();
 
   const notebookPts = bundle?.telemetry;
   const useNotebook = Boolean(notebookPts && notebookPts.length > 0);
 
+  const fault13ReplayCharts =
+    simulationRunning &&
+    fault13ReplayActive &&
+    fault13ReplayPayload != null;
+
   const data = useMemo(() => {
+    if (fault13ReplayCharts && fault13ReplayPayload) {
+      const end = fault13ReplayIndex;
+      const start = Math.max(0, end - 47);
+      const rows: {
+        i: number;
+        reactorTemp: number;
+        separatorPressure: number;
+        flowRate: number;
+        vibration: number;
+        anomalyScore: number;
+      }[] = [];
+      for (let j = start; j <= end; j++) {
+        rows.push({
+          i: j - start,
+          reactorTemp: Number(
+            fault13ReplayPayload.xmeas_9[j]!.toFixed(2),
+          ),
+          separatorPressure: Number(
+            fault13ReplayPayload.xmv_10[j]!.toFixed(2),
+          ),
+          flowRate: 0,
+          vibration: 0,
+          anomalyScore: Number(
+            fault13ReplayPayload.p_fault[j]!.toFixed(3),
+          ),
+        });
+      }
+      return rows;
+    }
     if (useNotebook && notebookPts) {
       const pts: SensorPoint[] = notebookPts.map((p, i) => ({
         t: typeof p.t === "number" ? p.t : i,
@@ -57,11 +98,21 @@ export function SensorCharts() {
     const pts =
       raw.length >= 2 ? raw : [raw[0] ?? snapshot.sensors, raw[0] ?? snapshot.sensors];
     return buildChartRows(pts);
-  }, [history, snapshot.sensors, useNotebook, notebookPts]);
+  }, [
+    history,
+    snapshot.sensors,
+    useNotebook,
+    notebookPts,
+    fault13ReplayCharts,
+    fault13ReplayPayload,
+    fault13ReplayIndex,
+  ]);
 
-  const subtitle = useNotebook
-    ? "Notebook export replay · risk proxy on anomaly chart"
-    : "Simulated historian stream · deviation-aware overlays";
+  const subtitle = fault13ReplayCharts
+    ? "Fault 13 test replay · XMEAS_9 (reactor temp) + XMV_10 (reactor CW / PID) · anomaly = P(fault)"
+    : useNotebook
+      ? "Notebook export replay · risk proxy on anomaly chart"
+      : "Simulated historian stream · deviation-aware overlays";
 
   return (
     <GlassPanel
@@ -70,6 +121,49 @@ export function SensorCharts() {
       accent="emerald"
       delay={0.12}
     >
+      {fault13ReplayCharts ? (
+        <div className="grid min-w-0 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <ChartCard
+            title="Reactor temperature (XMEAS_9)"
+            unit="°C"
+            fault={simulationRunning}
+            delay={0}
+          >
+            <MiniLine
+              data={data}
+              dataKey="reactorTemp"
+              color="#22d3ee"
+              fault={simulationRunning}
+            />
+          </ChartCard>
+          <ChartCard
+            title="Reactor CW flow / PID output (XMV_10)"
+            unit="%"
+            fault={simulationRunning}
+            delay={0.04}
+          >
+            <MiniLine
+              data={data}
+              dataKey="separatorPressure"
+              color="#34d399"
+              fault={simulationRunning}
+            />
+          </ChartCard>
+          <ChartCard
+            title="Model P(fault)"
+            unit="0–1"
+            fault={simulationRunning}
+            delay={0.08}
+            className="sm:col-span-2 xl:col-span-2"
+          >
+            <AnomalyChart
+              data={data}
+              fault={simulationRunning}
+              fillGradientId={anomalyFillId}
+            />
+          </ChartCard>
+        </div>
+      ) : (
       <div className="grid min-w-0 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <ChartCard
           title="Reactor temperature"
@@ -137,6 +231,7 @@ export function SensorCharts() {
           />
         </ChartCard>
       </div>
+      )}
     </GlassPanel>
   );
 }

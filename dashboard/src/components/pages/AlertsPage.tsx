@@ -4,10 +4,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Filter, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
-import { INCIDENT_SUBSYSTEMS } from "@/lib/incidents";
-import { severityBadgeClass } from "@/lib/mockTelemetry";
+import { useIncidentChecklist } from "@/context/IncidentChecklistContext";
 import { useNotebookIncidents } from "@/context/NotebookDashboardContext";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
+import { getChecklistForIncident } from "@/lib/incidentChecklist";
+import { INCIDENT_SUBSYSTEMS } from "@/lib/incidents";
+import { severityBadgeClass } from "@/lib/mockTelemetry";
 import type { IncidentRecord, Severity } from "@/lib/types";
 
 const SEVERITY_OPTIONS: (Severity | "ALL")[] = [
@@ -21,6 +23,7 @@ const SEVERITY_OPTIONS: (Severity | "ALL")[] = [
 export function AlertsPage() {
   const { incidents: simIncidents } = usePlantSimulation();
   const nbIncidents = useNotebookIncidents();
+  const { remainingSteps } = useIncidentChecklist();
   const incidents = nbIncidents.length > 0 ? nbIncidents : simIncidents;
   const [sev, setSev] = useState<Severity | "ALL">("ALL");
   const [subsystem, setSubsystem] = useState<string>("ALL");
@@ -43,6 +46,20 @@ export function AlertsPage() {
     () =>
       [...filtered].sort((a, b) => b.ts.getTime() - a.ts.getTime()),
     [filtered],
+  );
+
+  const unackedInView = useMemo(
+    () => sorted.filter((i) => !i.acknowledged).length,
+    [sorted],
+  );
+
+  const stepsFleet = useMemo(
+    () => remainingSteps(incidents),
+    [incidents, remainingSteps],
+  );
+  const stepsInView = useMemo(
+    () => remainingSteps(sorted),
+    [sorted, remainingSteps],
   );
 
   return (
@@ -120,7 +137,20 @@ export function AlertsPage() {
 
       <div className="mt-4 space-y-3">
         <p className="text-[11px] uppercase tracking-widest text-slate-500">
-          {sorted.length} incident{sorted.length === 1 ? "" : "s"} shown
+          {sorted.length} incident{sorted.length === 1 ? "" : "s"} in this view
+          {unackedInView > 0 ? (
+            <span className="normal-case text-cyan-200/90">
+              {" "}
+              · {unackedInView} unacknowledged · {stepsInView} checklist step
+              {stepsInView === 1 ? "" : "s"} left here · {stepsFleet} fleet-wide
+            </span>
+          ) : (
+            <span className="normal-case text-slate-600">
+              {" "}
+              · all acknowledged in this view · {stepsInView} checklist step
+              {stepsInView === 1 ? "" : "s"} left in view
+            </span>
+          )}
         </p>
         {sorted.map((inc, idx) => (
           <IncidentCard
@@ -194,6 +224,15 @@ function IncidentCard({
           className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`}
         />
       </button>
+
+      {!inc.acknowledged ? (
+        <IncidentChecklist inc={inc} />
+      ) : (
+        <p className="border-t border-white/[0.06] px-4 py-2 text-[11px] text-slate-600">
+          Record marked acknowledged — no operator checklist.
+        </p>
+      )}
+
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
@@ -227,5 +266,46 @@ function IncidentCard({
         )}
       </AnimatePresence>
     </motion.article>
+  );
+}
+
+function IncidentChecklist({ inc }: { inc: IncidentRecord }) {
+  const { isChecked, toggle } = useIncidentChecklist();
+  const items = useMemo(() => getChecklistForIncident(inc), [inc]);
+  const done = items.filter((it) => isChecked(inc.id, it.id)).length;
+
+  return (
+    <div className="border-t border-white/[0.06] bg-black/20 px-4 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+        Operator checklist{" "}
+        <span className="font-mono text-cyan-200/80">
+          {done}/{items.length}
+        </span>
+      </p>
+      <ul className="mt-2 space-y-2">
+        {items.map((it) => {
+          const on = isChecked(inc.id, it.id);
+          return (
+            <li key={it.id} className="flex items-start gap-2">
+              <input
+                id={`${inc.id}-${it.id}`}
+                type="checkbox"
+                checked={on}
+                onChange={() => toggle(inc.id, it.id)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/50 text-cyan-500 focus:ring-cyan-400/50"
+              />
+              <label
+                htmlFor={`${inc.id}-${it.id}`}
+                className={`cursor-pointer text-[12px] leading-snug ${
+                  on ? "text-slate-500 line-through" : "text-slate-200"
+                }`}
+              >
+                {it.label}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

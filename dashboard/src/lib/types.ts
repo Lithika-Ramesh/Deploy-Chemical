@@ -58,6 +58,8 @@ export interface IncidentRecord {
   recommendedAction: string;
   faultId: FaultId | null;
   acknowledged: boolean;
+  /** Optional operator checklist; defaults applied in UI when omitted. */
+  checklist?: { id: string; label: string }[];
 }
 
 export interface MaintenanceRecommendation {

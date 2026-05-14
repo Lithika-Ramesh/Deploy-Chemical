@@ -45,6 +45,7 @@ export interface NotebookIncidentPayload {
   recommendedAction: string;
   faultId: FaultId | null;
   acknowledged: boolean;
+  checklist?: IncidentRecord["checklist"];
 }
 
 export interface NotebookDashboardBundle {

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useNotebookArtifact } from "@/hooks/useNotebookArtifact";
+import { useIncidentChecklist } from "@/context/IncidentChecklistContext";
 import {
   useNotebookIncidents,
 } from "@/context/NotebookDashboardContext";
@@ -106,6 +107,7 @@ function Tile({
 export function OverviewStatTiles() {
   const { incidents } = usePlantSimulation();
   const nbIncidents = useNotebookIncidents();
+  const { remainingSteps } = useIncidentChecklist();
 
   const binary = useNotebookArtifact<BinaryResultsArtifact>(
     "/data/binary_results.json",
@@ -119,9 +121,15 @@ export function OverviewStatTiles() {
   const incidentSource = nbIncidents.length > 0 ? nbIncidents : incidents;
 
   const openUnacked = incidentSource.filter((i) => !i.acknowledged).length;
+  const checklistBacklog =
+    incidentSource.length > 0 ? remainingSteps(incidentSource) : 0;
+  /**
+   * With a live incident list: count unchecked operator checklist steps on
+   * unacknowledged incidents (persisted on Alerts). With no list: static demo count.
+   */
   const openDisplay =
-    openUnacked > 0
-      ? openUnacked
+    incidentSource.length > 0
+      ? checklistBacklog
       : binary.open_incidents ?? FALLBACK_BINARY.open_incidents;
 
   const plantHealth = Math.round(
@@ -196,9 +204,13 @@ export function OverviewStatTiles() {
         href="/simulation"
       />
       <Tile
-        label="Open incidents"
+        label="Open actions"
         value={openDisplay}
-        hint="Unacknowledged · requires operator review"
+        hint={
+          incidentSource.length > 0
+            ? `${openUnacked} unacknowledged incident${openUnacked === 1 ? "" : "s"} · ${checklistBacklog} checklist step${checklistBacklog === 1 ? "" : "s"} left (Alerts)`
+            : "Demo count when no incident list is loaded"
+        }
         icon={ClipboardList}
         delay={0.2}
         href="/alerts"

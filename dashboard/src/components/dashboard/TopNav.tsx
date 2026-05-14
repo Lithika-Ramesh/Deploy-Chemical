@@ -35,8 +35,12 @@ function useClock() {
 }
 
 export function TopNav() {
-  const { snapshot, notificationCount, simulationRunning } =
-    usePlantSimulation();
+  const {
+    snapshot,
+    notificationCount,
+    simulationRunning,
+    headerPlantStatusLabel,
+  } = usePlantSimulation();
   const { insight, systemHealthPct, aiOnline } = snapshot;
   const now = useClock();
 
@@ -74,9 +78,9 @@ export function TopNav() {
         <StatusChip
           icon={<Activity className="h-3.5 w-3.5" />}
           label="Plant"
-          value={insight.plantStatus}
-          valueClass={statusColorClass(insight.plantStatus)}
-          pulse={insight.plantStatus !== "NORMAL"}
+          value={headerPlantStatusLabel}
+          valueClass={statusColorClass(snapshot.insight.plantStatus)}
+          pulse={snapshot.insight.plantStatus !== "NORMAL"}
         />
         <StatusChip
           icon={<Cpu className="h-3.5 w-3.5" />}

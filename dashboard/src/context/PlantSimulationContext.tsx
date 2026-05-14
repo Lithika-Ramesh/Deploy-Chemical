@@ -10,6 +10,15 @@ import {
   useState,
 } from "react";
 import type { FaultId } from "@/lib/faultCatalog";
+import {
+  buildFault13FaultProbabilities,
+  buildFault13Snapshot,
+  faultDescriptionLine,
+  isFault13ReplayPayload,
+  operationalRiskLevel,
+  recommendedActionForFault,
+  type Fault13ReplayPayload,
+} from "@/lib/fault13Replay";
 import { buildIncidentLibrary } from "@/lib/incidents";
 import { buildMaintenanceRecommendations } from "@/lib/maintenanceData";
 import {
@@ -44,6 +53,8 @@ const HISTORY_CAP = 48;
 /** Mock telemetry refresh when no fault sim is running (lighter laptops). */
 const IDLE_TICK_MS = 4000;
 const ACTIVE_TICK_MS = 1000;
+/** Fault 13 JSON replay: 5 samples/s (~3.2 min for 960 rows). */
+const FAULT13_REPLAY_TICK_MS = 200;
 
 type LoopEngine = {
   pIdx: number;
@@ -93,6 +104,12 @@ type PlantSimulationContextValue = {
   sensorLoopScenarioLabel: string;
   sensorLoopPlainFaultHint: string | null;
   sensorLoopReady: boolean;
+  /** Test-set Fault 13 / run 1 replay driven by `/data/fault13_replay.json` */
+  fault13ReplayActive: boolean;
+  fault13ReplayPayload: Fault13ReplayPayload | null;
+  fault13ReplayIndex: number;
+  fault13ReplayProgress: { current: number; total: number } | null;
+  headerPlantStatusLabel: string;
 };
 
 const PlantSimulationContext =
@@ -103,8 +120,7 @@ export function PlantSimulationProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [selectedFaultId, setSelectedFaultId] =
-    useState<FaultId>("reactor_cooling");
+  const [selectedFaultId, setSelectedFaultId] = useState<FaultId>(1);
   const [simulationRunning, setSimulationRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [severity, setSeverity] = useState(2);
@@ -133,8 +149,17 @@ export function PlantSimulationProvider({
   >(null);
   const [sensorLoopReady, setSensorLoopReady] = useState(false);
 
+  const [fault13Payload, setFault13Payload] =
+    useState<Fault13ReplayPayload | null>(null);
+  const [fault13ReplayActive, setFault13ReplayActive] = useState(false);
+  const [fault13ReplayIndex, setFault13ReplayIndex] = useState(0);
+  const [replayExtraEvents, setReplayExtraEvents] = useState<PlantEvent[]>(
+    [],
+  );
+
   const loopEngine = useRef<LoopEngine>(freshLoopEngine());
   const loopPrimed = useRef(false);
+  const fault13HistCursor = useRef(-1);
   const scenarioCacheRef = useRef<
     Partial<Record<SensorLoopScenarioKey, SensorLoopFilePayload>>
   >({});
@@ -164,14 +189,44 @@ export function PlantSimulationProvider({
     [simulationConfig],
   );
 
-  const faultProbabilities = useMemo(
-    () => buildFaultProbabilities(simulationConfig),
-    [simulationConfig],
+  const faultProbabilities = useMemo(() => {
+    if (
+      fault13ReplayActive &&
+      fault13Payload &&
+      simulationRunning
+    ) {
+      return buildFault13FaultProbabilities(
+        fault13Payload,
+        fault13ReplayIndex,
+      );
+    }
+    return buildFaultProbabilities(simulationConfig);
+  }, [
+    fault13ReplayActive,
+    fault13Payload,
+    fault13ReplayIndex,
+    simulationConfig,
+    simulationRunning,
+  ]);
+
+  const baseSeedEvents = useMemo(
+    () =>
+      seedFaultEvents(
+        fault13ReplayActive
+          ? {
+              mode: "normal",
+              faultId: 0,
+              severity: 1,
+              emergency: false,
+            }
+          : simulationConfig,
+      ),
+    [fault13ReplayActive, simulationConfig],
   );
 
   const events = useMemo(
-    () => seedFaultEvents(simulationConfig),
-    [simulationConfig],
+    () => [...replayExtraEvents, ...baseSeedEvents],
+    [replayExtraEvents, baseSeedEvents],
   );
 
   const notificationCount = useMemo(() => {
@@ -180,8 +235,28 @@ export function PlantSimulationProvider({
         !i.acknowledged &&
         (i.severity === "HIGH" || i.severity === "CRITICAL"),
     ).length;
-    return Math.min(99, open + (simulationRunning ? 1 : 0));
-  }, [incidents, simulationRunning]);
+    const replayAlerts = replayExtraEvents.filter(
+      (e) => e.severity === "HIGH" || e.severity === "CRITICAL",
+    ).length;
+    return Math.min(
+      99,
+      open + replayAlerts + (simulationRunning ? 1 : 0),
+    );
+  }, [incidents, simulationRunning, replayExtraEvents]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/data/fault13_replay.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || j == null) return;
+        if (isFault13ReplayPayload(j)) setFault13Payload(j);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,11 +362,22 @@ export function PlantSimulationProvider({
     setHistory([]);
     setConfidenceHistory([]);
     setAnomalyHistory([]);
+    const useReplay =
+      selectedFaultId === 13 &&
+      fault13Payload != null &&
+      fault13Payload.samples.length > 0;
+    setFault13ReplayActive(useReplay);
+    setFault13ReplayIndex(0);
+    setReplayExtraEvents([]);
+    fault13HistCursor.current = -1;
     setSimulationRunning(true);
     setPaused(false);
     setEmergencyMode(false);
     setSeverity(2);
-  }, []);
+    if (useReplay && fault13Payload) {
+      setSnapshot(buildFault13Snapshot(fault13Payload, 0));
+    }
+  }, [selectedFaultId, fault13Payload]);
 
   const pauseSimulation = useCallback(() => {
     setPaused(true);
@@ -309,6 +395,10 @@ export function PlantSimulationProvider({
     setEmergencyMode(false);
     setSeverity(2);
     setHistory([]);
+    setFault13ReplayActive(false);
+    setFault13ReplayIndex(0);
+    setReplayExtraEvents([]);
+    fault13HistCursor.current = -1;
     const normal: SimulationConfig = {
       mode: "normal",
       faultId: selectedFaultId,
@@ -329,6 +419,8 @@ export function PlantSimulationProvider({
   }, []);
 
   useEffect(() => {
+    if (fault13ReplayActive) return;
+
     const intervalMs = simulationRunning ? ACTIVE_TICK_MS : IDLE_TICK_MS;
 
     const id = window.setInterval(() => {
@@ -353,7 +445,103 @@ export function PlantSimulationProvider({
     }, intervalMs);
 
     return () => window.clearInterval(id);
-  }, [paused, simulationRunning, simulationConfig]);
+  }, [paused, simulationRunning, simulationConfig, fault13ReplayActive]);
+
+  useEffect(() => {
+    if (!fault13ReplayActive || !simulationRunning || paused || !fault13Payload) {
+      return;
+    }
+    const maxIdx = fault13Payload.samples.length - 1;
+    const id = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      setFault13ReplayIndex((idx) => Math.min(idx + 1, maxIdx));
+    }, FAULT13_REPLAY_TICK_MS);
+    return () => window.clearInterval(id);
+  }, [
+    fault13ReplayActive,
+    simulationRunning,
+    paused,
+    fault13Payload,
+  ]);
+
+  useEffect(() => {
+    if (!fault13ReplayActive || !fault13Payload || !simulationRunning) return;
+    if (fault13HistCursor.current === fault13ReplayIndex) return;
+    fault13HistCursor.current = fault13ReplayIndex;
+    const snap = buildFault13Snapshot(fault13Payload, fault13ReplayIndex);
+    setSnapshot(snap);
+    setHistory((prev) => [...prev, snap.sensors].slice(-HISTORY_CAP));
+    setConfidenceHistory((prev) =>
+      [...prev, snap.insight.confidencePct].slice(-72),
+    );
+    setAnomalyHistory((prev) =>
+      [...prev, snap.anomalyIndex].slice(-72),
+    );
+  }, [
+    fault13ReplayActive,
+    fault13Payload,
+    fault13ReplayIndex,
+    simulationRunning,
+  ]);
+
+  useEffect(() => {
+    if (!fault13ReplayActive || !fault13Payload || !simulationRunning) return;
+    const i = fault13ReplayIndex;
+    if (i <= 0) return;
+    if (fault13Payload.is_fault[i] !== 1 || fault13Payload.is_fault[i - 1] !== 0) {
+      return;
+    }
+    const classId = Math.round(fault13Payload.fault_type[i] ?? 13);
+    const p = Number(fault13Payload.p_fault[i] ?? 0);
+    const conf = p * 100;
+    const risk = operationalRiskLevel(classId, p);
+    const alertId = `f13-alert-${i}-${classId}`;
+    setReplayExtraEvents((ev) => {
+      if (ev.some((e) => e.id === alertId)) return ev;
+      return [
+        {
+          id: alertId,
+          ts: new Date(),
+          kind: "ai_alert" as const,
+          title: `IDV(${classId}) DETECTED — ${risk} RISK`,
+          detail: `Fault: ${faultDescriptionLine(classId)}. Confidence: ${conf.toFixed(1)}%. ${recommendedActionForFault(classId)}`,
+          severity: risk === "HIGH" ? "HIGH" : "MEDIUM",
+        },
+        ...ev,
+      ];
+    });
+  }, [
+    fault13ReplayActive,
+    fault13Payload,
+    fault13ReplayIndex,
+    simulationRunning,
+  ]);
+
+  const headerPlantStatusLabel = useMemo(() => {
+    if (
+      fault13ReplayActive &&
+      fault13Payload &&
+      fault13ReplayIndex < fault13Payload.is_fault.length
+    ) {
+      if (fault13Payload.is_fault[fault13ReplayIndex] === 1) {
+        return "FAULT DETECTED";
+      }
+    }
+    return snapshot.insight.plantStatus;
+  }, [
+    fault13ReplayActive,
+    fault13Payload,
+    fault13ReplayIndex,
+    snapshot.insight.plantStatus,
+  ]);
+
+  const fault13ReplayProgress = useMemo(() => {
+    if (!fault13ReplayActive || !fault13Payload) return null;
+    return {
+      current: fault13ReplayIndex + 1,
+      total: fault13Payload.samples.length,
+    };
+  }, [fault13ReplayActive, fault13Payload, fault13ReplayIndex]);
 
   const value = useMemo(
     () => ({
@@ -388,6 +576,11 @@ export function PlantSimulationProvider({
       sensorLoopScenarioLabel,
       sensorLoopPlainFaultHint,
       sensorLoopReady,
+      fault13ReplayActive,
+      fault13ReplayPayload: fault13Payload,
+      fault13ReplayIndex,
+      fault13ReplayProgress,
+      headerPlantStatusLabel,
     }),
     [
       simulationConfig,
@@ -418,6 +611,11 @@ export function PlantSimulationProvider({
       sensorLoopScenarioLabel,
       sensorLoopPlainFaultHint,
       sensorLoopReady,
+      fault13ReplayActive,
+      fault13Payload,
+      fault13ReplayIndex,
+      fault13ReplayProgress,
+      headerPlantStatusLabel,
     ],
   );
 

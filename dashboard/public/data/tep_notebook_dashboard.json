@@ -75,7 +75,7 @@
       "title": "Notebook holdout \u00b7 champion multiclass",
       "diagnosis": "Static export from 04b (hist_gradient_boosting): test accuracy \u2248 0.925 on leakage-safe fault-period rows.",
       "recommendedAction": "Re-run 04b after data or hyperparameter changes; refresh this JSON via export script.",
-      "faultId": "sensor_drift",
+      "faultId": 13,
       "acknowledged": false
     },
     {
@@ -105,7 +105,7 @@
       "urgency": "P3",
       "failureWindowMinutes": null,
       "progressPct": 40,
-      "faultId": "separator_fault"
+      "faultId": 12,
     },
     {
       "id": "nb-pm-2",

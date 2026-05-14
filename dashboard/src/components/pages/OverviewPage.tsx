@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { AIStatusNarrative } from "@/components/overview/AIStatusNarrative";
 import { MaintenanceEvents } from "@/components/dashboard/MaintenanceEvents";
 import { OverviewStatTiles } from "@/components/dashboard/OverviewStatTiles";
-import { ProcessFlowVisual } from "@/components/dashboard/ProcessFlowVisual";
 
 const LiveSensorCharts = dynamic(
   () =>
@@ -45,13 +44,10 @@ export function OverviewPage() {
       <OverviewStatTiles />
 
       <div className="grid min-w-0 flex-1 gap-4 xl:grid-cols-12">
-        <div className="min-w-0 xl:col-span-4 2xl:col-span-3">
-          <ProcessFlowVisual />
-        </div>
-        <div className="min-w-0 xl:col-span-4 2xl:col-span-4">
+        <div className="min-w-0 xl:col-span-5 2xl:col-span-4">
           <AIStatusNarrative />
         </div>
-        <div className="min-w-0 xl:col-span-4 2xl:col-span-5">
+        <div className="min-w-0 xl:col-span-7 2xl:col-span-8">
           <LiveSensorCharts />
         </div>
       </div>
