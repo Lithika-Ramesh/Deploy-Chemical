@@ -10,14 +10,20 @@ import {
   ShieldAlert,
   Sparkles,
 } from "lucide-react";
+import { useNotebookDashboard } from "@/context/NotebookDashboardContext";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 import { GlassPanel } from "./GlassPanel";
 
 export function AIMonitoringCenter() {
   const { snapshot, simulationRunning } = usePlantSimulation();
+  const { bundle } = useNotebookDashboard();
   const { insight } = snapshot;
 
   const expanded = simulationRunning || insight.plantStatus !== "NORMAL";
+
+  const champTest = bundle?.multiclass.comparison.find(
+    (r) => r.split === "test" && r.model === bundle.multiclass.champion,
+  );
 
   return (
     <GlassPanel
@@ -138,6 +144,26 @@ export function AIMonitoringCenter() {
             highlight="text-emerald-200"
           />
         </motion.div>
+
+        {bundle && champTest && (
+          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2.5 text-[11px] leading-snug text-slate-300">
+            <span className="font-semibold uppercase tracking-wider text-emerald-200/95">
+              Notebook evaluation
+            </span>
+            <span className="mx-1.5 text-slate-600">·</span>
+            Champion{" "}
+            <span className="font-mono text-cyan-200/90">{bundle.multiclass.champion}</span> on
+            holdout fault-period rows — accuracy{" "}
+            <span className="font-mono text-slate-100">
+              {(champTest.accuracy * 100).toFixed(2)}%
+            </span>
+            , macro-F1{" "}
+            <span className="font-mono text-slate-100">
+              {(champTest.macro_f1 * 100).toFixed(2)}%
+            </span>
+            . Sensors chart replays export telemetry when present.
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           <motion.div

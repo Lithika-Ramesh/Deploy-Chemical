@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useNotebookDashboard } from "@/context/NotebookDashboardContext";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 import { GlassPanel } from "./GlassPanel";
 import type { SensorPoint } from "@/lib/types";
@@ -34,18 +35,38 @@ function buildChartRows(points: SensorPoint[]) {
 export function SensorCharts() {
   const anomalyFillId = useId().replace(/:/g, "");
   const { history, snapshot, simulationRunning } = usePlantSimulation();
+  const { bundle } = useNotebookDashboard();
+
+  const notebookPts = bundle?.telemetry;
+  const useNotebook = Boolean(notebookPts && notebookPts.length > 0);
+
   const data = useMemo(() => {
+    if (useNotebook && notebookPts) {
+      const pts: SensorPoint[] = notebookPts.map((p, i) => ({
+        t: typeof p.t === "number" ? p.t : i,
+        reactorTemp: p.reactorTemp,
+        separatorPressure: p.separatorPressure,
+        flowRate: p.flowRate,
+        vibration: p.vibration,
+        anomalyScore: p.anomalyScore,
+      }));
+      return buildChartRows(pts);
+    }
     const raw =
       history.length > 0 ? [...history] : [snapshot.sensors];
     const pts =
       raw.length >= 2 ? raw : [raw[0] ?? snapshot.sensors, raw[0] ?? snapshot.sensors];
     return buildChartRows(pts);
-  }, [history, snapshot.sensors]);
+  }, [history, snapshot.sensors, useNotebook, notebookPts]);
+
+  const subtitle = useNotebook
+    ? "Notebook export replay · risk proxy on anomaly chart"
+    : "Simulated historian stream · deviation-aware overlays";
 
   return (
     <GlassPanel
       title="Live sensor analytics"
-      subtitle="Simulated historian stream · anomaly-aware overlays"
+      subtitle={subtitle}
       accent="emerald"
       delay={0.12}
     >

@@ -45,9 +45,8 @@ export function AnalyticsPage() {
     () => ({
       lead: (
         <>
-          Ensemble variance within nominal band. SHAP stability index{" "}
-          <span className="font-mono text-cyan-200">0.87</span> — illustrative
-          twin values for the demo UI.
+          Ensemble variance within nominal band. AI explanation quality: consistent
+          (illustrative twin values for this demo UI).
         </>
       ),
       trail:
@@ -87,7 +86,7 @@ export function AnalyticsPage() {
           icon={<Cpu className="h-4 w-4 text-sky-400" />}
           label="Monitored features"
           value={`${kpis.sensors}`}
-          hint="TEP convention (41 XMEAS + 11 XMV)"
+          hint="Standard Tennessee Eastman sensor set (52 plant channels)"
           delay={0.08}
         />
         <Kpi

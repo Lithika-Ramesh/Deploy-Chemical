@@ -9,12 +9,19 @@ import {
   Shield,
 } from "lucide-react";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
+import {
+  useNotebookDashboard,
+  useNotebookMaintenance,
+} from "@/context/NotebookDashboardContext";
 import { severityBadgeClass } from "@/lib/mockTelemetry";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 import type { MaintenanceRecommendation } from "@/lib/types";
 
 export function MaintenancePage() {
   const { maintenanceItems, snapshot } = usePlantSimulation();
+  const nbMaint = useNotebookMaintenance();
+  const { bundle } = useNotebookDashboard();
+  const items = nbMaint.length > 0 ? nbMaint : maintenanceItems;
 
   return (
     <div className="px-3 py-4 sm:px-4 lg:px-6">
@@ -29,11 +36,18 @@ export function MaintenancePage() {
             {snapshot.systemHealthPct.toFixed(0)}%
           </span>
           ).
+          {nbMaint.length > 0 && bundle ? (
+            <span className="mt-1 block text-emerald-200/85">
+              Work orders below are driven by{" "}
+              <span className="font-mono text-emerald-100/90">tep_notebook_dashboard.json</span>{" "}
+              (generated {new Date(bundle.generatedAt).toLocaleDateString()}).
+            </span>
+          ) : null}
         </p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {maintenanceItems.map((m, idx) => (
+        {items.map((m, idx) => (
           <MaintenanceCard key={m.id} item={m} index={idx} />
         ))}
       </div>

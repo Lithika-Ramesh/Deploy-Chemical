@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
+import { plainShapFeatureName } from "@/lib/plainLanguage";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 
 const axis = { stroke: "#64748b", fontSize: 10, fill: "#94a3b8" };
@@ -57,7 +58,7 @@ export function AnalyticsChartsPanel() {
   const shapBars = useMemo(
     () =>
       shapFeatures.slice(0, 8).map((s) => ({
-        tag: s.tag.replace("xmeas_", "XM"),
+        tag: plainShapFeatureName(s.tag),
         shap: Number((s.value * 100).toFixed(1)),
       })),
     [shapFeatures],
@@ -72,7 +73,7 @@ export function AnalyticsChartsPanel() {
     <div className="grid gap-4 lg:grid-cols-2">
       <GlassPanel
         title="Model confidence vs. anomaly"
-        subtitle="Streaming twin diagnostics (mock SHAP-ready pipeline)"
+        subtitle="Streaming twin diagnostics (attention-style ranking)"
         accent="blue"
         delay={0}
         className="min-h-[300px]"
@@ -126,7 +127,7 @@ export function AnalyticsChartsPanel() {
 
       <GlassPanel
         title="Fault class probabilities"
-        subtitle="Softmax-style view of TEP fault families"
+        subtitle="Relative likelihood of each fault family"
         accent="emerald"
         delay={0.05}
         className="min-h-[300px]"
@@ -167,7 +168,7 @@ export function AnalyticsChartsPanel() {
       </GlassPanel>
 
       <GlassPanel
-        title="Feature attribution (SHAP-style)"
+        title="Feature attention ranking"
         subtitle="Relative contribution to current risk score"
         accent="cyan"
         delay={0.1}
@@ -185,7 +186,7 @@ export function AnalyticsChartsPanel() {
               <YAxis
                 type="category"
                 dataKey="tag"
-                width={56}
+                width={128}
                 tick={axis}
               />
               <Tooltip

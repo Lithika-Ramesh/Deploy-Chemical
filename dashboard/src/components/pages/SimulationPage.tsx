@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
 import { ProcessFlowVisual } from "@/components/dashboard/ProcessFlowVisual";
+import { useNotebookDashboard } from "@/context/NotebookDashboardContext";
 import { FAULT_CATALOG, FAULT_ORDER, type FaultId } from "@/lib/faultCatalog";
+import { METRIC_LABELS } from "@/lib/plainLanguage";
 import { statusColorClass } from "@/lib/mockTelemetry";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 
@@ -52,6 +54,8 @@ export function SimulationPage() {
     snapshot,
     tick,
   } = usePlantSimulation();
+
+  const { bundle } = useNotebookDashboard();
 
   const { insight, anomalyIndex, predictionLatencyMs } = snapshot;
   const def = FAULT_CATALOG[selectedFaultId];
@@ -205,7 +209,7 @@ export function SimulationPage() {
 
           <GlassPanel
             title="AI prediction stream"
-            subtitle="Classifier output · anomaly index · latency"
+            subtitle="Fault detector output · deviation index · latency"
             accent={
               insight.plantStatus === "CRITICAL"
                 ? "red"
@@ -257,6 +261,68 @@ export function SimulationPage() {
               </p>
             </div>
           </GlassPanel>
+
+          {bundle ? (
+            <GlassPanel
+              title="Notebook benchmark"
+              subtitle="Fault identifier metrics · validation / test splits from dashboard export"
+              accent="emerald"
+              delay={0.09}
+            >
+              <div className="overflow-x-auto p-3">
+                <table className="w-full min-w-[520px] border-collapse text-left text-[11px] text-slate-300">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[9px] uppercase tracking-wider text-slate-500">
+                      <th className="py-2 pr-3 font-medium">Run</th>
+                      <th className="py-2 pr-3 font-medium">Split</th>
+                      <th className="py-2 pr-3 font-medium">{METRIC_LABELS.accuracy}</th>
+                      <th className="py-2 pr-3 font-medium">{METRIC_LABELS.macro_recall}</th>
+                      <th className="py-2 pr-3 font-medium">{METRIC_LABELS.macro_f1}</th>
+                      <th className="py-2 font-medium">Train (s)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bundle.multiclass.comparison.map((row) => (
+                      <tr
+                        key={`${row.model}-${row.split}`}
+                        className={`border-b border-white/[0.06] ${
+                          row.model === bundle.multiclass.champion && row.split === "test"
+                            ? "bg-emerald-500/10"
+                            : ""
+                        }`}
+                      >
+                        <td className="py-2 pr-3 text-cyan-100/90">
+                          {row.model === bundle.multiclass.champion &&
+                          row.split === "test"
+                            ? "Primary fault identifier (test)"
+                            : row.model === bundle.multiclass.champion &&
+                                row.split === "validation"
+                              ? "Primary fault identifier (validation)"
+                              : "Comparison model"}
+                        </td>
+                        <td className="py-2 pr-3 capitalize">{row.split}</td>
+                        <td className="py-2 pr-3 tabular-nums">{row.accuracy.toFixed(4)}</td>
+                        <td className="py-2 pr-3 tabular-nums">{row.macro_recall.toFixed(4)}</td>
+                        <td className="py-2 pr-3 tabular-nums">{row.macro_f1.toFixed(4)}</td>
+                        <td className="py-2 tabular-nums text-slate-500">
+                          {row.train_time_s != null ? row.train_time_s : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-t border-white/[0.06] px-4 py-2 text-[10px] text-slate-500">
+                Fault detector (binary) summary —{" "}
+                <span className="text-slate-300">
+                  {METRIC_LABELS.auc}:{" "}
+                  {bundle.binary.models[bundle.binary.defaultModelKey]?.auc != null
+                    ? `${(bundle.binary.models[bundle.binary.defaultModelKey].auc! * 100).toFixed(2)}%`
+                    : "—"}
+                </span>
+              </p>
+            </GlassPanel>
+          ) : null}
         </div>
 
         <div className="space-y-4 xl:col-span-7">
