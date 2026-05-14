@@ -1,19 +1,12 @@
 # Smart Factory Dashboard — Navigation & Flow Guide
 
-This document helps **new teammates** understand what the dashboard is for, how the pieces connect, and **how to move through the UI** with confidence. It complements the Tennessee Eastman Process (TEP) predictive-maintenance backend (optional FastAPI).
+This document helps **new teammates** understand what the dashboard is for, how the pieces connect, and **how to move through the UI** with confidence. The Tennessee Eastman Process (TEP) ML pipeline and notebooks live elsewhere in the repo; this app is a **self-contained Next.js operator UI** with an in-browser mock twin.
 
 ---
 
 ## 1. What you are looking at
 
-The dashboard is a **multi-page, Industry 4.0–style command center** for a *digital twin* of a chemical plant. It is built with **Next.js (App Router)**, **React**, **Tailwind CSS**, and **Framer Motion**. It can run in two modes:
-
-| Mode | Meaning |
-|------|--------|
-| **Mock / local twin** | Sensor streams, AI text, and charts are **simulated in the browser**. No Python required. |
-| **Linked API** (optional) | If you set `NEXT_PUBLIC_AIFI_API_URL` (e.g. `http://127.0.0.1:8000`), the top bar can show that the **FastAPI** service is reachable (`/health`). Charts and simulation still use the in-app mock unless you extend the code to call `/predict` or `/demo/...`. |
-
-**Important:** Training the model and serving predictions are still done with your existing Python pipeline (`src.pipeline`, `api.main`). This frontend is the **operator-facing layer**.
+The dashboard is a **multi-page, Industry 4.0–style command center** for a *digital twin* of a chemical plant. It is built with **Next.js (App Router)**, **React**, **Tailwind CSS**, and **Framer Motion**. Sensor streams, AI copy, and most charts are **simulated in the browser** so you can run `npm run dev` with **no backend**. To show real model metrics later, add your own wiring (for example static JSON under `public/data/` or a fetch to a service you control).
 
 ---
 
@@ -27,18 +20,6 @@ npm run dev
 ```
 
 Open **http://localhost:3000** in a browser.
-
-Optional: run the API from the **repository root** (separate terminal):
-
-```bash
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
-```
-
-Optional: point the UI at the API (e.g. `.env.local` in `dashboard/`):
-
-```env
-NEXT_PUBLIC_AIFI_API_URL=http://127.0.0.1:8000
-```
 
 ---
 
@@ -59,14 +40,7 @@ flowchart TB
     Ctx --> Pages
   end
 
-  subgraph Optional["Optional backend"]
-    API["FastAPI api.main\n:8000"]
-  end
-
-  Browser -.->|"NEXT_PUBLIC_AIFI_API_URL\nGET /health"| API
-
   style Ctx fill:#0e7490,color:#fff
-  style API fill:#334155,color:#fff
 ```
 
 **Takeaway:** Almost everything you see on every page reads from **one shared state object** (`PlantSimulationProvider`). That is why starting a simulation on **Fault simulation** immediately changes plant status, charts, and incidents on other pages when you navigate there.
@@ -101,7 +75,7 @@ flowchart LR
 | **`/maintenance`** | Maintenance planners | **Work-order style** cards: equipment, risk, steps, progress bars — tied to the current scenario when simulation is on. |
 | **`/analytics`** | Data / ML stakeholders | **Trends and explainability-style views:** confidence vs anomaly, fault-class bars, SHAP-style feature ranking (mocked for the UI). |
 
-The **top bar** is **global**: plant status, AI online, system health, time, notification badge, optional API link, and a shortcut to **Control room** (`/simulation`).
+The **top bar** is **global**: plant status, AI online, system health, time, notification badge, and a shortcut to **Control room** (`/simulation`).
 
 ---
 
@@ -221,7 +195,7 @@ flowchart LR
 The badge aggregates **unacknowledged high/critical-style items** in the incident list plus a small bonus when a simulation run is active — it is meant to feel like a real SOC, not a literal email count.
 
 **Does the dashboard call the model on every chart update?**  
-Not by default. The **mock loop** runs in the browser. Wiring `/predict` or streaming `/demo/...` would be a deliberate next integration step.
+No. The **mock loop** runs in the browser. Adding HTTP calls to your own inference service or loading exported JSON would be a deliberate next step.
 
 **Can I present this without Python?**  
 Yes. `npm run dev` alone is enough for a full UI walkthrough.

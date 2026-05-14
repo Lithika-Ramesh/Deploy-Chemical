@@ -30,9 +30,6 @@ import type {
   SensorPoint,
   ShapFeature,
 } from "@/lib/types";
-import type { ParsedPipelineSummary } from "@/lib/pipelineManifest";
-import { parsePipelineManifest } from "@/lib/pipelineManifest";
-import { fetchApiHealth, fetchMetrics, isApiConfigured } from "@/lib/api";
 
 const HISTORY_CAP = 48;
 /** Mock telemetry refresh when no fault sim is running (lighter laptops). */
@@ -65,9 +62,6 @@ type PlantSimulationContextValue = {
   faultProbabilities: FaultClassProbability[];
   confidenceHistory: number[];
   anomalyHistory: number[];
-  apiReachable: boolean | null;
-  /** Parsed `GET /metrics` manifest when `NEXT_PUBLIC_AIFI_API_URL` is set and the API returns pipeline JSON. */
-  pipelineManifest: ParsedPipelineSummary | null;
   notificationCount: number;
 };
 
@@ -98,10 +92,6 @@ export function PlantSimulationProvider({
   const [history, setHistory] = useState<SensorPoint[]>([]);
   const [confidenceHistory, setConfidenceHistory] = useState<number[]>([]);
   const [anomalyHistory, setAnomalyHistory] = useState<number[]>([]);
-  const [apiReachable, setApiReachable] = useState<boolean | null>(null);
-  const [pipelineManifestRaw, setPipelineManifestRaw] = useState<
-    Record<string, unknown> | null
-  >(null);
 
   const simulationConfig: SimulationConfig = useMemo(
     () => ({
@@ -111,11 +101,6 @@ export function PlantSimulationProvider({
       emergency: emergencyMode,
     }),
     [simulationRunning, selectedFaultId, severity, emergencyMode],
-  );
-
-  const pipelineManifest = useMemo(
-    () => parsePipelineManifest(pipelineManifestRaw),
-    [pipelineManifestRaw],
   );
 
   const incidents = useMemo(
@@ -200,23 +185,6 @@ export function PlantSimulationProvider({
   }, []);
 
   useEffect(() => {
-    if (!isApiConfigured()) return;
-    let cancelled = false;
-    void (async () => {
-      const [h, metrics] = await Promise.all([
-        fetchApiHealth(),
-        fetchMetrics(),
-      ]);
-      if (cancelled) return;
-      setApiReachable(h?.status === "ok");
-      setPipelineManifestRaw(metrics);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     const intervalMs = simulationRunning ? ACTIVE_TICK_MS : IDLE_TICK_MS;
 
     const id = window.setInterval(() => {
@@ -270,8 +238,6 @@ export function PlantSimulationProvider({
       faultProbabilities,
       confidenceHistory,
       anomalyHistory,
-      apiReachable,
-      pipelineManifest,
       notificationCount,
     }),
     [
@@ -297,8 +263,6 @@ export function PlantSimulationProvider({
       faultProbabilities,
       confidenceHistory,
       anomalyHistory,
-      apiReachable,
-      pipelineManifest,
       notificationCount,
     ],
   );

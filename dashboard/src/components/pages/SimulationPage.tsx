@@ -51,8 +51,6 @@ export function SimulationPage() {
     increaseSeverity,
     snapshot,
     tick,
-    pipelineManifest,
-    apiReachable,
   } = usePlantSimulation();
 
   const { insight, anomalyIndex, predictionLatencyMs } = snapshot;
@@ -87,27 +85,6 @@ export function SimulationPage() {
           )}
         </AnimatePresence>
       </header>
-
-      {pipelineManifest?.bestModel && apiReachable ? (
-        <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[11px] text-emerald-100/95">
-          <span className="font-semibold uppercase tracking-wider text-emerald-200/90">
-            Pipeline model
-          </span>
-          <span className="ml-2 font-mono text-emerald-50">
-            {pipelineManifest.bestModel}
-          </span>
-          {pipelineManifest.bestF1Macro != null ? (
-            <span className="ml-2 text-emerald-200/90">
-              test F1 macro {pipelineManifest.bestF1Macro.toFixed(4)}
-            </span>
-          ) : null}
-          <span className="mt-1 block text-[10px] text-emerald-200/70">
-            Loaded from FastAPI <code className="text-emerald-100/80">GET /metrics</code> — use{" "}
-            <code className="text-emerald-100/80">/simulate</code> or{" "}
-            <code className="text-emerald-100/80">/demo</code> to drive scoring from this artifact.
-          </span>
-        </div>
-      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-5">

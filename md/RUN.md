@@ -1,4 +1,4 @@
-# How to run AIFI (Python API + Next.js dashboard)
+# How to run AIFI (Python pipeline + Next.js dashboard)
 
 Step-by-step from a clean machine. Commands assume **Windows PowerShell** and that the repo root is:
 
@@ -63,7 +63,9 @@ First pipeline run may build parquet cache under `outputs\cache\` (~2 minutes, l
 
 ---
 
-## 4. Start the FastAPI server (Uvicorn)
+## 4. Start the FastAPI server (Uvicorn) — optional
+
+Use this when you want the **HTTP API** (Swagger, `/predict`, etc.). The **Next.js dashboard does not call this server**; it runs on in-browser mock telemetry unless you add your own integration.
 
 Always run from the **project root** so `api.main` and `src` resolve correctly.
 
@@ -79,7 +81,7 @@ python -m uvicorn api.main:app --reload --port 8000
 
 If `uvicorn` is not on `PATH`, `python -m uvicorn` (as above) is the reliable form on Windows.
 
-Leave this terminal open while you use the dashboard.
+Keep this terminal open only while you are exercising the API.
 
 ---
 
@@ -94,17 +96,11 @@ npm install
 
 ---
 
-## 6. Point the dashboard at the API (live metrics / health)
+## 6. Dashboard and the Python API
 
-The dashboard reads `NEXT_PUBLIC_AIFI_API_URL` (see `dashboard\src\lib\api.ts`). Without it, API-dependent UI stays in demo/mock mode.
+The dashboard under `dashboard\` is **self-contained**: `npm run dev` or `npm start` is enough for the full operator UI (mock twin, charts, alarm lab with optional static JSON).
 
-Create `dashboard\.env.local` (same folder as `package.json`):
-
-```env
-NEXT_PUBLIC_AIFI_API_URL=http://127.0.0.1:8000
-```
-
-Rebuild after changing this variable (Next bakes `NEXT_PUBLIC_*` into the client at build time).
+There is **no** `NEXT_PUBLIC_AIFI_API_URL` wiring in this repo’s Next.js app. To show real pipeline metrics in the UI later, add your own approach (for example export JSON into `dashboard\public\data\` and load it from a page or context).
 
 ---
 
@@ -123,8 +119,6 @@ By default `next start` serves on http://localhost:3000 (unless `PORT` is set).
 ---
 
 ## 8. Local development (hot reload, no production build)
-
-Still use `.env.local` with `NEXT_PUBLIC_AIFI_API_URL` if you want live API calls:
 
 ```powershell
 cd C:\Users\LithiChang\groupAIFL\AIFI-group_project\dashboard
@@ -152,9 +146,8 @@ jupyter notebook notebooks\tep_pipeline.ipynb
 |------|------|
 | 1 | `pip install -r requirements.txt` |
 | 2 | `python -m src.pipeline …` (if `outputs\models\` missing) |
-| 3 | `python -m uvicorn api.main:app --reload --port 8000` from **repo root** |
-| 4 | `dashboard\.env.local` → `NEXT_PUBLIC_AIFI_API_URL=http://127.0.0.1:8000` |
-| 5 | `cd dashboard` → `npm install` → `npm run build` → `npm start` (or `npm run dev`) |
+| 3 | *(Optional)* `python -m uvicorn api.main:app --reload --port 8000` from **repo root** |
+| 4 | `cd dashboard` → `npm install` → `npm run build` → `npm start` (or `npm run dev`) |
 
 ---
 
@@ -162,6 +155,5 @@ jupyter notebook notebooks\tep_pipeline.ipynb
 
 - **`ModuleNotFoundError` for `src` or `api`:** Start Uvicorn from the **repository root**, not from `api\` or `dashboard\`.
 - **API returns errors about missing models:** Run the pipeline (section 3) or confirm `outputs\models\` contains the expected `.joblib` files.
-- **Dashboard never shows API as connected:** Check `.env.local`, restart `npm run dev` / rebuild after env changes, and confirm http://127.0.0.1:8000/health in the browser.
 
 For more detail on endpoints and artifacts, see `README.md`.
