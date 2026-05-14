@@ -26,6 +26,7 @@ function parseIncidents(raw: NotebookDashboardBundle["incidents"]): IncidentReco
   return raw.map((r) => ({
     ...r,
     ts: new Date(r.ts),
+    checklist: r.checklist,
   }));
 }
 

@@ -71,7 +71,7 @@ export function AnalyticsChartsPanel() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <GlassPanel
+      {/* <GlassPanel
         title="Model confidence vs. anomaly"
         subtitle="Streaming twin diagnostics (attention-style ranking)"
         accent="blue"
@@ -165,7 +165,7 @@ export function AnalyticsChartsPanel() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </GlassPanel>
+      </GlassPanel> */}
 
       <GlassPanel
         title="Feature attention ranking"

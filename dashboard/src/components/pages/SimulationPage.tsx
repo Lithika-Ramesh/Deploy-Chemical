@@ -18,7 +18,7 @@ import {
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
 import { ProcessFlowVisual } from "@/components/dashboard/ProcessFlowVisual";
 import { useNotebookDashboard } from "@/context/NotebookDashboardContext";
-import { FAULT_CATALOG, FAULT_ORDER, type FaultId } from "@/lib/faultCatalog";
+import { FAULT_CATALOG, FAULT_ORDER, faultDropdownLabel, parseFaultId } from "@/lib/faultCatalog";
 import { METRIC_LABELS } from "@/lib/plainLanguage";
 import { statusColorClass } from "@/lib/mockTelemetry";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
@@ -53,6 +53,9 @@ export function SimulationPage() {
     increaseSeverity,
     snapshot,
     tick,
+    fault13ReplayPayload,
+    fault13ReplayActive,
+    fault13ReplayProgress,
   } = usePlantSimulation();
 
   const { bundle } = useNotebookDashboard();
@@ -72,6 +75,29 @@ export function SimulationPage() {
             observe AI residuals in real time. Digital twin tick:{" "}
             <span className="font-mono text-cyan-300/90">{tick}s</span>
           </p>
+          {fault13ReplayPayload ? (
+            <p className="max-w-2xl text-[11px] leading-snug text-cyan-200/80">
+              Demo: choose{" "}
+              <span className="font-semibold text-cyan-100">Fault 13</span> and
+              press Start to replay{" "}
+              <span className="font-mono text-cyan-300/90">tep_test</span> run 1
+              with real binary/multiclass scores (JSON at ~5 samples/s).
+              {fault13ReplayActive && fault13ReplayProgress ? (
+                <span className="ml-2 font-mono text-slate-400">
+                  Sample {fault13ReplayProgress.current}/
+                  {fault13ReplayProgress.total}
+                </span>
+              ) : null}
+            </p>
+          ) : (
+            <p className="max-w-xl text-[11px] text-amber-200/70">
+              Fault 13 replay file not found — add{" "}
+              <span className="font-mono">fault13_replay.json</span> under{" "}
+              <span className="font-mono">public/data</span> (run{" "}
+              <span className="font-mono">scripts/export_fault13_replay.py</span>
+              ).
+            </p>
+          )}
         </div>
         <AnimatePresence mode="wait">
           {emergencyMode && (
@@ -104,16 +130,16 @@ export function SimulationPage() {
                   Fault type
                 </span>
                 <select
-                  value={selectedFaultId}
+                  value={String(selectedFaultId)}
                   onChange={(e) =>
-                    setSelectedFaultId(e.target.value as FaultId)
+                    setSelectedFaultId(parseFaultId(e.target.value))
                   }
                   disabled={simulationRunning && !paused}
                   className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-cyan-400/40 disabled:opacity-50"
                 >
                   {FAULT_ORDER.map((id) => (
-                    <option key={id} value={id}>
-                      {FAULT_CATALOG[id].label}
+                    <option key={id} value={String(id)}>
+                      {faultDropdownLabel(id)}
                     </option>
                   ))}
                 </select>
@@ -326,7 +352,7 @@ export function SimulationPage() {
         </div>
 
         <div className="space-y-4 xl:col-span-7">
-          <ProcessFlowVisual />
+          
           <SensorCharts />
         </div>
       </div>

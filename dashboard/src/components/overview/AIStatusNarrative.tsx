@@ -7,8 +7,7 @@ import {
   CheckCircle2,
   ShieldAlert,
 } from "lucide-react";
-import { useMemo } from "react";
-import { useNotebookArtifact } from "@/hooks/useNotebookArtifact";
+import { useEffect, useMemo, useState } from "react";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
 import type { ChampionProbabilitiesArtifact } from "@/lib/overviewArtifacts";
 import {
@@ -20,17 +19,19 @@ import {
 import type { FaultClassProbability } from "@/lib/types";
 
 const EMPTY_PROBS: ChampionProbabilitiesArtifact = {};
+const CHAMPION_CSV_API = "/api/multiclass-champion-probabilities";
 
 function topDevelopingFaults(
   champion: ChampionProbabilitiesArtifact,
   mock: FaultClassProbability[],
-): { label: string; pct: number }[] {
+): { id: number; label: string; pct: number }[] {
   if (Array.isArray(champion.classes) && champion.classes.length > 0) {
     const rows = champion.classes
       .filter((c) => c.id !== 0 && c.pct > 3)
       .sort((a, b) => b.pct - a.pct)
       .slice(0, 2)
       .map((c) => ({
+        id: c.id,
         label: plainFaultDescription(c.id),
         pct: Math.round(c.pct * 10) / 10,
       }));
@@ -39,7 +40,7 @@ function topDevelopingFaults(
   return mock
     .filter((m) => m.fault !== "Normal" && m.pct > 3)
     .slice(0, 2)
-    .map((m) => ({ label: m.fault, pct: m.pct }));
+    .map((m, i) => ({ id: -(i + 1), label: m.fault, pct: m.pct }));
 }
 
 export interface AIStatusNarrativeProps {
@@ -48,10 +49,26 @@ export interface AIStatusNarrativeProps {
 
 export function AIStatusNarrative({ className = "" }: AIStatusNarrativeProps) {
   const { snapshot, shapFeatures, faultProbabilities } = usePlantSimulation();
-  const champion = useNotebookArtifact<ChampionProbabilitiesArtifact>(
-    "/data/multiclass_champion_probabilities.json",
-    EMPTY_PROBS,
-  );
+  const [champion, setChampion] =
+    useState<ChampionProbabilitiesArtifact>(EMPTY_PROBS);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(CHAMPION_CSV_API, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: unknown) => {
+        if (cancelled || d == null || typeof d !== "object") return;
+        const o = d as ChampionProbabilitiesArtifact;
+        setChampion({
+          generated_at: o.generated_at,
+          classes: o.classes,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const insight = snapshot.insight;
   const hasDetectedFault = Boolean(insight.detectedFault);
@@ -76,8 +93,15 @@ export function AIStatusNarrative({ className = "" }: AIStatusNarrativeProps) {
 
   const dataBadge =
     champion.generated_at != null
-      ? `Model data · last run ${champion.generated_at}`
+      ? `Champion CSV · file mtime ${champion.generated_at}`
       : "Simulated · demo mode";
+
+  const confidenceLine =
+    tone === "fault" && hasDetectedFault
+      ? `The twin is tracking ${insight.detectedFault} with about ${insight.confidencePct}% model confidence on the injected scenario.`
+      : tone === "normal"
+        ? `The AI is about ${insight.confidencePct}% confident the plant matches a nominal fingerprint.`
+        : `Confidence is roughly ${insight.confidencePct}% — the plant is not in crisis, but several signals deserve a closer look.`;
 
   const StatusIcon =
     tone === "normal"
@@ -121,7 +145,7 @@ export function AIStatusNarrative({ className = "" }: AIStatusNarrativeProps) {
               {headline}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-slate-300">
-              The AI is {insight.confidencePct}% confident no fault is active.
+              {confidenceLine}
             </p>
           </div>
         </div>
@@ -129,11 +153,11 @@ export function AIStatusNarrative({ className = "" }: AIStatusNarrativeProps) {
         {showDeveloping ? (
           <div className="mt-5 border-t border-white/[0.06] pt-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              If a fault were developing, it would most likely look like:
+              Champion model marginal (last CSV row), excluding nominal:
             </p>
             <ul className="mt-3 space-y-3">
               {developing.map((row) => (
-                <li key={row.label} className="flex items-center gap-3">
+                <li key={row.id} className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-slate-200">{row.label}</p>
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800">

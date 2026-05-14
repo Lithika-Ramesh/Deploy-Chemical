@@ -43,7 +43,7 @@ export function buildMaintenanceRecommendations(
       urgency: "P4",
       failureWindowMinutes: null,
       progressPct: 28,
-      faultId: "sensor_drift",
+      faultId: 13,
     },
     {
       id: "m-3",
@@ -58,7 +58,7 @@ export function buildMaintenanceRecommendations(
       urgency: "P2",
       failureWindowMinutes: 180,
       progressPct: 44,
-      faultId: "compressor_failure",
+      faultId: 7,
     },
   ];
 

@@ -1,5 +1,5 @@
 import type { FaultId } from "./faultCatalog";
-import { FAULT_CATALOG } from "./faultCatalog";
+import { FAULT_CATALOG, FAULT_ORDER } from "./faultCatalog";
 import type {
   AIInsight,
   FaultClassProbability,
@@ -121,40 +121,55 @@ function generateSensorRow(config: SimulationConfig, t: number): SensorPoint {
   let anom = 0.12 + 0.55 * sp + (rnd(7) - 0.5) * 0.06;
 
   switch (id) {
-    case "reactor_cooling":
+    case 0:
+      break;
+    case 4:
+    case 11:
       temp += 6 * sp + (rnd(5) - 0.5) * 1.1;
       press += 120 * sp;
       flow = Math.max(38, flow - 2.5 * sp);
       vib += 0.12 * sp;
       break;
-    case "feed_loss":
+    case 1:
+    case 2:
+    case 6:
+    case 8:
       flow = Math.max(32, flow - 9 * sp);
       press -= 55 * sp;
       temp -= 1.2 * sp;
       anom += 0.08 * sp;
       break;
-    case "pressure_instability":
+    case 7:
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
       press += (180 * sp + Math.sin(tick / 3) * 40 * sp) * 0.6;
       flow += Math.sin(tick / 2.5) * 1.2 * sp;
       vib += 0.08 * sp;
       break;
-    case "sensor_drift":
+    case 13:
       temp += (tick * 0.02 * sp) % 4;
       press += (tick * 0.15 * sp) % 25;
       anom += 0.05 * sp;
       break;
-    case "valve_failure":
+    case 14:
+    case 15:
       flow += Math.sin(tick / 1.8) * 4 * sp;
       press += 90 * sp * Math.abs(Math.sin(tick / 4));
       vib += 0.2 * sp;
       break;
-    case "separator_fault":
+    case 5:
+    case 12:
       press += 200 * sp;
       vib += 0.22 * sp;
       flow -= 2 * sp;
       temp += 1.5 * sp;
       break;
-    case "compressor_failure":
+    case 3:
+    case 9:
+    case 10:
       vib += 0.45 * sp;
       press -= 40 * sp;
       flow -= 3 * sp;
@@ -175,6 +190,17 @@ function generateSensorRow(config: SimulationConfig, t: number): SensorPoint {
 }
 
 function buildFaultInsight(config: SimulationConfig): AIInsight {
+  if (config.faultId === 0) {
+    return {
+      ...NORMAL_INSIGHT,
+      faultId: 0,
+      detectedFault: null,
+      affectedSystems: FAULT_CATALOG[0].affectedSystems,
+      recommendedAction: FAULT_CATALOG[0].recommendedAction,
+      actionDetail: FAULT_CATALOG[0].actionDetail,
+    };
+  }
+
   const def = FAULT_CATALOG[config.faultId];
   const level = clampSeverity(config.severity);
   const sev = severityFromLevel(level, config.emergency);
@@ -336,19 +362,34 @@ export function buildShapImportance(
     base.map((b) => (b.tag === tag ? { ...b, value: b.value + v } : b));
 
   switch (config.faultId) {
-    case "reactor_cooling":
+    case 0:
+      return base;
+    case 4:
+    case 11:
       return bump("xmeas_9", 0.12).sort((a, b) => b.value - a.value);
-    case "feed_loss":
+    case 1:
+    case 2:
+    case 6:
+    case 8:
       return bump("xmeas_21", 0.11).sort((a, b) => b.value - a.value);
-    case "pressure_instability":
+    case 7:
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
       return bump("xmeas_12", 0.1).sort((a, b) => b.value - a.value);
-    case "sensor_drift":
+    case 13:
       return bump("xmeas_17", 0.09).sort((a, b) => b.value - a.value);
-    case "valve_failure":
+    case 14:
+    case 15:
       return bump("xmeas_3", 0.1).sort((a, b) => b.value - a.value);
-    case "separator_fault":
+    case 5:
+    case 12:
       return bump("xmeas_31", 0.11).sort((a, b) => b.value - a.value);
-    case "compressor_failure":
+    case 3:
+    case 9:
+    case 10:
       return bump("xmeas_41", 0.12).sort((a, b) => b.value - a.value);
     default:
       return base;
@@ -358,36 +399,24 @@ export function buildShapImportance(
 export function buildFaultProbabilities(
   config: SimulationConfig,
 ): FaultClassProbability[] {
-  const labels = [
-    "Normal",
-    "Reactor cooling",
-    "Feed loss",
-    "Pressure",
-    "Sensor drift",
-    "Valve",
-    "Separator",
-    "Compressor",
-  ];
-  const weights = labels.map((_, i) => (i === 0 ? 0.35 : rnd(i + 3) * 0.12));
-  if (config.mode === "fault") {
-    const idx: Record<FaultId, number> = {
-      reactor_cooling: 1,
-      feed_loss: 2,
-      pressure_instability: 3,
-      sensor_drift: 4,
-      valve_failure: 5,
-      separator_fault: 6,
-      compressor_failure: 7,
-    };
-    const j = idx[config.faultId];
+  const labels = FAULT_ORDER.map((id) =>
+    id === 0 ? "Normal" : FAULT_CATALOG[id].description,
+  );
+  const weights = FAULT_ORDER.map((id) =>
+    id === 0 ? 0.35 : rnd(id + 3) * 0.06,
+  );
+  if (config.mode === "fault" && config.faultId !== 0) {
+    const j = config.faultId;
     weights[j] += 0.45 + config.severity * 0.04 + (config.emergency ? 0.12 : 0);
     weights[0] *= 0.35;
   }
   const sum = weights.reduce((a, b) => a + b, 0);
-  return labels.map((fault, i) => ({
-    fault,
-    pct: Math.round((weights[i] / sum) * 1000) / 10,
-  })).sort((a, b) => b.pct - a.pct);
+  return labels
+    .map((fault, i) => ({
+      fault,
+      pct: Math.round((weights[i]! / sum) * 1000) / 10,
+    }))
+    .sort((a, b) => b.pct - a.pct);
 }
 
 export function severityBadgeClass(s: Severity): string {

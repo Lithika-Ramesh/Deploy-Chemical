@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DM_Sans, Geist_Mono, Orbitron } from "next/font/google";
+import { IncidentChecklistProvider } from "@/context/IncidentChecklistContext";
 import { NotebookDashboardProvider } from "@/context/NotebookDashboardContext";
 import { PlantSimulationProvider } from "@/context/PlantSimulationContext";
 import "./globals.css";
@@ -40,7 +41,9 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[#020617]" suppressHydrationWarning>
         <PlantSimulationProvider>
-          <NotebookDashboardProvider>{children}</NotebookDashboardProvider>
+          <NotebookDashboardProvider>
+            <IncidentChecklistProvider>{children}</IncidentChecklistProvider>
+          </NotebookDashboardProvider>
         </PlantSimulationProvider>
       </body>
     </html>

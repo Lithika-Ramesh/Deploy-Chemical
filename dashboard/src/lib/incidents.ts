@@ -35,7 +35,7 @@ export function buildIncidentLibrary(
       title: "Level oscillation advisory",
       diagnosis: "LC-204 MV hunting near setpoint under feed swing",
       recommendedAction: "Detune cascade · check boot purge",
-      faultId: "separator_fault",
+      faultId: 12,
       acknowledged: true,
     },
     {
@@ -46,7 +46,7 @@ export function buildIncidentLibrary(
       title: "Exotherm rate anomaly",
       diagnosis: "Model residual on jacket ΔT vs. power draw",
       recommendedAction: "Reduce catalyst feed · inspect CW valve",
-      faultId: "reactor_cooling",
+      faultId: 4,
       acknowledged: false,
     },
     {
@@ -57,7 +57,7 @@ export function buildIncidentLibrary(
       title: "Mass balance drift",
       diagnosis: "FIC-204 vs. tank strapping mismatch 1.8%",
       recommendedAction: "Verify flow element · lab grab sample",
-      faultId: "feed_loss",
+      faultId: 6,
       acknowledged: true,
     },
     {
@@ -68,7 +68,7 @@ export function buildIncidentLibrary(
       title: "Surge margin erosion",
       diagnosis: "Recycle valve fast swings · vibration RMS rising",
       recommendedAction: "Unload compressor · check anti-surge line",
-      faultId: "compressor_failure",
+      faultId: 7,
       acknowledged: false,
     },
   ];
