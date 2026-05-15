@@ -172,12 +172,12 @@ def _default_incidents() -> list[dict[str, Any]]:
             "ts": "2026-03-15T14:22:00+00:00",
             "severity": "MEDIUM",
             "subsystem": "DCS / Analytics",
-            "title": "Notebook holdout · champion multiclass",
+            "title": "CONDENSER IDV(5) Cooling water temperature elevated",
             "diagnosis": (
                 "Static export from 04b (hist_gradient_boosting): test accuracy ≈ 0.925 "
                 "on leakage-safe fault-period rows."
             ),
-            "recommendedAction": "Re-run 04b after data or hyperparameter changes; refresh this JSON via export script.",
+            "recommendedAction": "maintenance tab for run 78 should not include risk",
             "faultId": "sensor_drift",
             "acknowledged": False,
         },

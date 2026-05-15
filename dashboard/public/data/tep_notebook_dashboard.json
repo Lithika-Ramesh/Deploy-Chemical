@@ -72,22 +72,11 @@
       "ts": "2026-03-15T14:22:00+00:00",
       "severity": "MEDIUM",
       "subsystem": "DCS / Analytics",
-      "title": "Notebook holdout \u00b7 champion multiclass",
-      "diagnosis": "Static export from 04b (hist_gradient_boosting): test accuracy \u2248 0.925 on leakage-safe fault-period rows.",
-      "recommendedAction": "Re-run 04b after data or hyperparameter changes; refresh this JSON via export script.",
+      "title": "CONDENSER IDV(5) Cooling water temperature elevated",
+      "diagnosis": "Inlet valve open 20.7% (normal:18.1%) IMPACT: Reduced product yield if unaddressed",
+      "recommendedAction": "maintenance tab for run 78 should not include risk",
       "faultId": 13,
       "acknowledged": false
-    },
-    {
-      "id": "nb-seed-2",
-      "ts": "2026-03-12T09:05:00+00:00",
-      "severity": "LOW",
-      "subsystem": "DCS / Analytics",
-      "title": "Binary gatekeeper calibration",
-      "diagnosis": "04a exports ROC/threshold grids \u2014 operator UI shows summary metrics from the selected champion.",
-      "recommendedAction": "Inspect binary_artifacts_*.json for FAR vs missed-fault trade-offs.",
-      "faultId": null,
-      "acknowledged": true
     }
   ],
   "maintenance": [
@@ -106,8 +95,8 @@
         "Compare XMEAS_13 and XMV_11 to historian"
       ],
       "urgency": "P4",
-      "failureWindowMinutes": 11,
-      "progressPct": 95,
+      "failureWindowMinutes": null,
+      "progressPct": 0,
       "faultId": 5,
       "tepCase": {
         "simulationRun": 78,
@@ -134,8 +123,8 @@
         "Prioritize separator PIT and condenser duty"
       ],
       "urgency": "P2",
-      "failureWindowMinutes": 14,
-      "progressPct": 55,
+      "failureWindowMinutes": null,
+      "progressPct": 0,
       "faultId": 5,
       "tepCase": {
         "simulationRun": 148,
@@ -146,91 +135,6 @@
         "multiclassIdv5Pct": 98.1226533166458,
         "xmeas13Delta": -7.831249999999727,
         "caseTag": "Strong step (\u2212)"
-      }
-    },
-    {
-      "id": "f5-pm-171",
-      "equipment": "Overhead condenser \u00b7 CW return \u00b7 tep_test run 171",
-      "issue": "90 binary alerts before sample 161 \u2014 false-alarm review",
-      "risk": "HIGH",
-      "impact": "pre-FA 90 \u00b7 1st alert 21 \u00b7 delay -140 \u00b7 max P(fault) 99.996% \u00b7 IDV(5) 88.4% \u00b7 \u0394XMEAS_13 -0.92",
-      "steps": [
-        "Recover condensing duty",
-        "Check CW flow to condenser",
-        "confirm \u0394T across bundle",
-        "review tower pressure",
-        "Review alarm rationalization on binary score (threshold 0.35)",
-        "Pair briefing with clean run 78"
-      ],
-      "urgency": "P1",
-      "failureWindowMinutes": 45,
-      "progressPct": 35,
-      "faultId": 5,
-      "tepCase": {
-        "simulationRun": 171,
-        "preFalseAlarms": 90,
-        "firstAlertSample": 21,
-        "detectionDelaySamples": -140,
-        "maxPFault": 0.9999582767486572,
-        "multiclassIdv5Pct": 88.42696629213484,
-        "xmeas13Delta": -0.9159999999997126,
-        "caseTag": "Nuisance alarms"
-      }
-    },
-    {
-      "id": "f5-pm-377",
-      "equipment": "Overhead condenser \u00b7 CW return \u00b7 tep_test run 377",
-      "issue": "Subtle \u0394XMEAS_13 (+0.12) with strong model response at onset",
-      "risk": "MEDIUM",
-      "impact": "pre-FA 0 \u00b7 1st alert 161 \u00b7 delay 0 \u00b7 max P(fault) 99.996% \u00b7 IDV(5) 98.4% \u00b7 \u0394XMEAS_13 +0.12",
-      "steps": [
-        "Recover condensing duty",
-        "Check CW flow to condenser",
-        "confirm \u0394T across bundle",
-        "review tower pressure",
-        "Contrast with Fault 13 slow-drift narrative"
-      ],
-      "urgency": "P3",
-      "failureWindowMinutes": 11,
-      "progressPct": 70,
-      "faultId": 5,
-      "tepCase": {
-        "simulationRun": 377,
-        "preFalseAlarms": 0,
-        "firstAlertSample": 161,
-        "detectionDelaySamples": 0,
-        "maxPFault": 0.9999560117721558,
-        "multiclassIdv5Pct": 98.375,
-        "xmeas13Delta": 0.1211250000005748,
-        "caseTag": "Subtle physics"
-      }
-    },
-    {
-      "id": "f5-pm-429",
-      "equipment": "Overhead condenser \u00b7 CW return \u00b7 tep_test run 429",
-      "issue": "Large positive XMEAS_13 step \u2014 mirror holdout run",
-      "risk": "HIGH",
-      "impact": "pre-FA 0 \u00b7 1st alert 161 \u00b7 delay 0 \u00b7 max P(fault) 99.994% \u00b7 IDV(5) 97.8% \u00b7 \u0394XMEAS_13 +7.39",
-      "steps": [
-        "Recover condensing duty",
-        "Check CW flow to condenser",
-        "confirm \u0394T across bundle",
-        "review tower pressure",
-        "Compare with run 148 for run-to-run variability"
-      ],
-      "urgency": "P2",
-      "failureWindowMinutes": 11,
-      "progressPct": 58,
-      "faultId": 5,
-      "tepCase": {
-        "simulationRun": 429,
-        "preFalseAlarms": 0,
-        "firstAlertSample": 161,
-        "detectionDelaySamples": 0,
-        "maxPFault": 0.9999375343322754,
-        "multiclassIdv5Pct": 97.75,
-        "xmeas13Delta": 7.387125000000196,
-        "caseTag": "Strong step (+)"
       }
     }
   ],
