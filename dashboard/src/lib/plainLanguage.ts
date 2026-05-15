@@ -132,28 +132,3 @@ export function plainNotebookModelName(raw: string): string {
   }
   return "Model candidate";
 }
-
-export type PlantStatusTone = "normal" | "fault" | "degraded";
-
-export function plantStatusTone(
-  plantStatus: "NORMAL" | "WARNING" | "CRITICAL",
-  hasDetectedFault: boolean,
-): PlantStatusTone {
-  if (plantStatus === "NORMAL" && !hasDetectedFault) return "normal";
-  if (plantStatus === "CRITICAL" || hasDetectedFault) return "fault";
-  return "degraded";
-}
-
-export function plantStatusHeadline(
-  tone: PlantStatusTone,
-  detectedFaultPlain: string | null,
-): string {
-  if (tone === "normal") return "Plant running normally";
-  if (tone === "fault") {
-    const name = detectedFaultPlain?.trim();
-    return name
-      ? `Fault developing — ${name}`
-      : "Fault developing — pattern under review";
-  }
-  return "AI less certain — closer monitoring advised";
-}

@@ -1,37 +1,33 @@
-export type SensorLoopScenarioKey =
-  | "normal_ops"
-  | "fault_developing"
-  | "fault_active";
+export type SensorLoopScenarioKey = "fault5_run78";
 
 export interface SensorLoopFilePayload {
   scenario: SensorLoopScenarioKey;
   label: string;
   duration_ticks: number;
+  /** 0-based tick index where fault is injected (tep_test sample 161) */
+  fault_onset_tick?: number;
   sensors: {
-    reactor_temp: number[];
     separator_pressure: number[];
-    recycle_flow: number[];
+    condenser_cw_flow: number[];
+    comp_cw_outlet_temp: number[];
   };
   anomaly_score: number[];
-  /** Shown when anomaly is high (fault_active scenario) */
+  /** Shown when anomaly is high */
   plain_fault_hint?: string | null;
 }
 
 export interface SensorLoopTick {
-  reactor_temp: number;
   separator_pressure: number;
-  recycle_flow: number;
+  condenser_cw_flow: number;
+  comp_cw_outlet_temp: number;
   anomaly_score: number;
 }
 
 export const SENSOR_LOOP_TICK_MS = 800;
-export const SENSOR_LOOP_WINDOW = 60;
+/** Visible historian points — matches Fault 13 simulation live charts (48-sample window). */
+export const SENSOR_LOOP_WINDOW = 48;
 
 export const SCENARIO_PLAYLIST: ReadonlyArray<{
   file: SensorLoopScenarioKey;
   repeats: number;
-}> = [
-  { file: "normal_ops", repeats: 3 },
-  { file: "fault_developing", repeats: 1 },
-  { file: "fault_active", repeats: 1 },
-];
+}> = [{ file: "fault5_run78", repeats: 999 }];

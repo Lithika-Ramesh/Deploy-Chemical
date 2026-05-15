@@ -201,7 +201,7 @@ export function SimulationPage() {
                   <RotateCcw className="h-4 w-4" />
                   Reset
                 </motion.button>
-                <motion.button
+                {/* <motion.button
                   type="button"
                   whileTap={{ scale: 0.98 }}
                   onClick={increaseSeverity}
@@ -223,7 +223,7 @@ export function SimulationPage() {
                 >
                   <Zap className="h-4 w-4" />
                   Emergency
-                </motion.button>
+                </motion.button> */}
               </div>
 
               <div className="rounded-xl border border-white/[0.06] bg-black/35 p-3 text-xs text-slate-400">
@@ -233,7 +233,7 @@ export function SimulationPage() {
             </div>
           </GlassPanel>
 
-          <GlassPanel
+          {/* <GlassPanel
             title="AI prediction stream"
             subtitle="Fault detector output · deviation index · latency"
             accent={
@@ -286,7 +286,7 @@ export function SimulationPage() {
                   : "—"}
               </p>
             </div>
-          </GlassPanel>
+          </GlassPanel> */}
 
           {bundle ? (
             <GlassPanel

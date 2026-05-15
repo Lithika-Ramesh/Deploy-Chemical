@@ -149,7 +149,7 @@ export function SensorCharts() {
               fault={simulationRunning}
             />
           </ChartCard>
-          <ChartCard
+          {/* <ChartCard
             title="Model P(fault)"
             unit="0–1"
             fault={simulationRunning}
@@ -161,7 +161,7 @@ export function SensorCharts() {
               fault={simulationRunning}
               fillGradientId={anomalyFillId}
             />
-          </ChartCard>
+          </ChartCard> */}
         </div>
       ) : (
       <div className="grid min-w-0 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">

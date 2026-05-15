@@ -62,6 +62,17 @@ export interface IncidentRecord {
   checklist?: { id: string; label: string }[];
 }
 
+export interface MaintenanceTepCaseMetrics {
+  simulationRun: number;
+  preFalseAlarms: number;
+  firstAlertSample: number | null;
+  detectionDelaySamples: number | null;
+  maxPFault: number;
+  multiclassIdv5Pct: number;
+  xmeas13Delta: number;
+  caseTag: string;
+}
+
 export interface MaintenanceRecommendation {
   id: string;
   equipment: string;
@@ -73,6 +84,8 @@ export interface MaintenanceRecommendation {
   failureWindowMinutes: number | null;
   progressPct: number;
   faultId: FaultId | null;
+  /** Optional holdout test-set run metrics (Fault 5 curated cases). */
+  tepCase?: MaintenanceTepCaseMetrics;
 }
 
 export interface ShapFeature {

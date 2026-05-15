@@ -290,10 +290,13 @@ export function PlantSimulationProvider({
 
       const i = loopEngine.current.tIdx;
       const row: SensorLoopTick = {
-        reactor_temp: sc.sensors.reactor_temp[i] ?? sc.sensors.reactor_temp[0]!,
         separator_pressure:
           sc.sensors.separator_pressure[i] ?? sc.sensors.separator_pressure[0]!,
-        recycle_flow: sc.sensors.recycle_flow[i] ?? sc.sensors.recycle_flow[0]!,
+        condenser_cw_flow:
+          sc.sensors.condenser_cw_flow[i] ?? sc.sensors.condenser_cw_flow[0]!,
+        comp_cw_outlet_temp:
+          sc.sensors.comp_cw_outlet_temp[i] ??
+          sc.sensors.comp_cw_outlet_temp[0]!,
         anomaly_score: sc.anomaly_score[i] ?? sc.anomaly_score[0] ?? 0,
       };
 
@@ -330,9 +333,9 @@ export function PlantSimulationProvider({
         const w: SensorLoopTick[] = [];
         for (let j = 0; j < n; j++) {
           w.push({
-            reactor_temp: first.sensors.reactor_temp[j]!,
             separator_pressure: first.sensors.separator_pressure[j]!,
-            recycle_flow: first.sensors.recycle_flow[j]!,
+            condenser_cw_flow: first.sensors.condenser_cw_flow[j]!,
+            comp_cw_outlet_temp: first.sensors.comp_cw_outlet_temp[j]!,
             anomaly_score: first.anomaly_score[j]!,
           });
         }

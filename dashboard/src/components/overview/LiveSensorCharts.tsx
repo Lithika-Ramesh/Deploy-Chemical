@@ -13,52 +13,54 @@ import {
   YAxis,
 } from "recharts";
 import { usePlantSimulation } from "@/context/PlantSimulationContext";
+import { SENSOR_LOOP_WINDOW } from "@/lib/sensorLoopTypes";
 
 const axis = { stroke: "#475569", fontSize: 10, fill: "#94a3b8" };
 const grid = { stroke: "#1e293b", strokeOpacity: 0.9 };
 
-const REACTOR = {
-  key: "reactor_temp" as const,
-  min: 100,
-  max: 165,
-  label: "Reactor temperature -Xmeas_9",
-  unit: "°C",
-};
+/** Nominal bands from tep_test Fault 5 run 78 (clean hero), with padding */
 const SEP = {
   key: "separator_pressure" as const,
-  min: 2600,
-  max: 2800,
-  label: "Separator pressure- Xmeas_13",
+  min: 2540,
+  max: 2700,
+  label: "Separator pressure — XMEAS_13",
   unit: "kPa",
 };
-const FLOW = {
-  key: "recycle_flow" as const,
-  min: 0.2,
-  max: 0.5,
-  label: "Recycle flow rate- Xmeas_17",
-  unit: "kscmh",
+const CW_FLOW = {
+  key: "condenser_cw_flow" as const,
+  min: 12,
+  max: 26,
+  label: "Condenser CW flow — XMV_11",
+  unit: "%",
+};
+const CW_OUT = {
+  key: "comp_cw_outlet_temp" as const,
+  min: 75,
+  max: 81,
+  label: "Compressor CW outlet — XMEAS_22",
+  unit: "°C",
 };
 
 type Row = Record<string, number> & { i: number };
 
 function chartRows(
   windowTicks: {
-    reactor_temp: number;
     separator_pressure: number;
-    recycle_flow: number;
+    condenser_cw_flow: number;
+    comp_cw_outlet_temp: number;
   }[],
 ): Row[] {
   return windowTicks.map((p, i) => ({
     i,
-    [REACTOR.key]: p.reactor_temp,
     [SEP.key]: p.separator_pressure,
-    [FLOW.key]: p.recycle_flow,
+    [CW_FLOW.key]: p.condenser_cw_flow,
+    [CW_OUT.key]: p.comp_cw_outlet_temp,
   }));
 }
 
 function seriesOutOfNormal(
   data: Row[],
-  key: "reactor_temp" | "separator_pressure" | "recycle_flow",
+  key: "separator_pressure" | "condenser_cw_flow" | "comp_cw_outlet_temp",
   min: number,
   max: number,
 ): boolean {
@@ -77,6 +79,7 @@ export function LiveSensorCharts({ className = "" }: LiveSensorChartsProps) {
     sensorLoopWindow,
     sensorLoopAnomaly,
     sensorLoopPlainFaultHint,
+    sensorLoopScenarioLabel,
     sensorLoopReady,
   } = usePlantSimulation();
 
@@ -87,16 +90,17 @@ export function LiveSensorCharts({ className = "" }: LiveSensorChartsProps) {
   const highAlert = sensorLoopAnomaly > 0.6;
 
   const faultPlain =
-    sensorLoopPlainFaultHint?.trim() || "Reactor cooling upset";
+    sensorLoopPlainFaultHint?.trim() ||
+    "Condenser cooling water inlet temperature step (IDV-5)";
 
-  const reactorWarn = data.length
-    ? seriesOutOfNormal(data, REACTOR.key, REACTOR.min, REACTOR.max)
-    : false;
   const sepWarn = data.length
     ? seriesOutOfNormal(data, SEP.key, SEP.min, SEP.max)
     : false;
   const flowWarn = data.length
-    ? seriesOutOfNormal(data, FLOW.key, FLOW.min, FLOW.max)
+    ? seriesOutOfNormal(data, CW_FLOW.key, CW_FLOW.min, CW_FLOW.max)
+    : false;
+  const outWarn = data.length
+    ? seriesOutOfNormal(data, CW_OUT.key, CW_OUT.min, CW_OUT.max)
     : false;
 
   return (
@@ -109,11 +113,14 @@ export function LiveSensorCharts({ className = "" }: LiveSensorChartsProps) {
             Live plant sensors
           </p>
           <p className="mt-0.5 text-[10px] text-slate-500">
-            Recorded sequence · three operator-critical traces
+            tep_test run 78 · Fault 5 clean hero replay
           </p>
+          {sensorLoopScenarioLabel ? (
+            <p className="mt-0.5 text-[9px] text-cyan-500/70">{sensorLoopScenarioLabel}</p>
+          ) : null}
         </div>
         <span className="shrink-0 rounded-full border border-white/10 bg-black/35 px-2 py-0.5 text-[8px] text-slate-500">
-          {!sensorLoopReady ? "Starting…" : "Replay · demo"}
+          {!sensorLoopReady ? "Starting…" : "Live · run 78"}
         </span>
       </div>
 
@@ -133,40 +140,47 @@ export function LiveSensorCharts({ className = "" }: LiveSensorChartsProps) {
 
       <div className="grid flex-1 gap-3 p-3 sm:p-4">
         <SensorStrip
-          title={REACTOR.label}
-          unit={REACTOR.unit}
-          data={data}
-          dataKey={REACTOR.key}
-          yMin={REACTOR.min}
-          yMax={REACTOR.max}
-          warn={reactorWarn}
-          nowIndex={nowIndex}
-        />
-        <SensorStrip
           title={SEP.label}
           unit={SEP.unit}
           data={data}
           dataKey={SEP.key}
           yMin={SEP.min}
           yMax={SEP.max}
+          decimals={0}
+          yAxisWidth={52}
           warn={sepWarn}
           nowIndex={nowIndex}
         />
         <SensorStrip
-          title={FLOW.label}
-          unit={FLOW.unit}
+          title={CW_FLOW.label}
+          unit={CW_FLOW.unit}
           data={data}
-          dataKey={FLOW.key}
-          yMin={FLOW.min}
-          yMax={FLOW.max}
-          decimals={3}
+          dataKey={CW_FLOW.key}
+          yMin={CW_FLOW.min}
+          yMax={CW_FLOW.max}
+          decimals={2}
+          yAxisWidth={40}
           warn={flowWarn}
+          nowIndex={nowIndex}
+        />
+        <SensorStrip
+          title={CW_OUT.label}
+          unit={CW_OUT.unit}
+          data={data}
+          dataKey={CW_OUT.key}
+          yMin={CW_OUT.min}
+          yMax={CW_OUT.max}
+          decimals={1}
+          yAxisWidth={40}
+          warn={outWarn}
           nowIndex={nowIndex}
         />
       </div>
     </div>
   );
 }
+
+const CHART_HEIGHT = 132;
 
 function SensorStrip({
   title,
@@ -178,6 +192,7 @@ function SensorStrip({
   warn,
   nowIndex,
   decimals = 1,
+  yAxisWidth = 44,
 }: {
   title: string;
   unit: string;
@@ -188,6 +203,7 @@ function SensorStrip({
   warn: boolean;
   nowIndex: number;
   decimals?: number;
+  yAxisWidth?: number;
 }) {
   const stroke = warn ? "#fbbf24" : "#22d3ee";
   const gradId = useId().replace(/:/g, "");
@@ -209,16 +225,27 @@ function SensorStrip({
           </span>
         </div>
       </div>
-      <div className="h-[120px] min-h-[120px] w-full min-w-0">
+      <div
+        className="w-full min-w-0"
+        style={{ height: CHART_HEIGHT, minHeight: CHART_HEIGHT }}
+      >
         {data.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-[10px] text-slate-600">
+          <div
+            className="flex items-center justify-center text-[10px] text-slate-600"
+            style={{ height: CHART_HEIGHT }}
+          >
             Loading trace…
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%" minHeight={110}>
+          <ResponsiveContainer width="100%" height={CHART_HEIGHT} minWidth={0}>
             <LineChart
               data={data}
-              margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
+              margin={{
+                top: 6,
+                right: 8,
+                left: yAxisWidth + 4,
+                bottom: 0,
+              }}
             >
               <defs>
                 <linearGradient id={`g-${gradId}`} x1="0" y1="0" x2="0" y2="1">
@@ -227,12 +254,19 @@ function SensorStrip({
                 </linearGradient>
               </defs>
               <CartesianGrid {...grid} strokeDasharray="3 6" />
-              <XAxis dataKey="i" hide />
+              <XAxis
+                dataKey="i"
+                type="number"
+                domain={[0, SENSOR_LOOP_WINDOW - 1]}
+                allowDataOverflow
+                hide
+              />
               <YAxis
                 type="number"
                 domain={[yMin, yMax]}
                 tick={axis}
-                width={36}
+                width={yAxisWidth}
+                tickCount={5}
                 tickFormatter={(v) => v.toFixed(decimals)}
               />
               <ReferenceArea
