@@ -7,9 +7,10 @@ export type IncidentChecklistItem = {
 
 /** Default operator steps when an incident has no embedded checklist. */
 export const DEFAULT_INCIDENT_CHECKLIST: IncidentChecklistItem[] = [
-  { id: "review", label: "Review AI diagnosis & severity" },
-  { id: "notes", label: "Log operator notes in shift handover" },
-  { id: "dcs", label: "Verify DCS / field response & document outcome" },
+  { id: "review", label: "check CW inlet temperature" },
+  { id: "notes", label: "inspect CWS supply line" },
+  { id: "dcs", label: "monitor separtor pressure" },
+  { id: "dcs", label: "schedule inspection within 24h" },
 ];
 
 export function getChecklistForIncident(inc: IncidentRecord): IncidentChecklistItem[] {

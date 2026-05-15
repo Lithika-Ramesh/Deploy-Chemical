@@ -32,10 +32,18 @@ export function MaintenancePage() {
   const nbMaint = useNotebookMaintenance();
   const { bundle } = useNotebookDashboard();
 
-  const items =
+  const FAULT5_VISIBLE_RUNS = new Set([78, 148]);
+
+  const rawItems =
     nbMaint.length > 0 ? nbMaint : FAULT5_MAINTENANCE_CASES.length > 0
       ? FAULT5_MAINTENANCE_CASES
       : maintenanceItems;
+
+  const items = rawItems.filter(
+    (m) =>
+      !m.tepCase?.simulationRun ||
+      FAULT5_VISIBLE_RUNS.has(m.tepCase.simulationRun),
+  );
 
   const isFault5Tep = items.some((m) => m.faultId === 5 && m.tepCase);
 
@@ -122,6 +130,8 @@ function MaintenanceCard({
   item: MaintenanceRecommendation;
   index: number;
 }) {
+  const isFault5TepCard = item.faultId === 5 && item.tepCase != null;
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 14 }}
@@ -131,9 +141,11 @@ function MaintenanceCard({
       <GlassPanel
         title={item.equipment}
         subtitle={
-          item.tepCase
-            ? `${item.tepCase.caseTag} · urgency ${item.urgency} · ${item.risk} risk`
-            : `Urgency ${item.urgency} · ${item.risk} risk`
+          isFault5TepCard
+            ? item.tepCase!.caseTag
+            : item.tepCase
+              ? `${item.tepCase.caseTag} · urgency ${item.urgency} · ${item.risk} risk`
+              : `Urgency ${item.urgency} · ${item.risk} risk`
         }
         accent={
           item.risk === "CRITICAL"
@@ -157,26 +169,30 @@ function MaintenanceCard({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.06 + index * 0.03 }}
           >
-            <span
-              className={`rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-widest ${severityBadgeClass(item.risk)}`}
-            >
-              {item.risk}
-            </span>
-            <span className="flex items-center gap-1 rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-cyan-200">
-              <Shield className="h-3 w-3" />
-              {item.urgency}
-            </span>
+            {!isFault5TepCard ? (
+              <span
+                className={`rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-widest ${severityBadgeClass(item.risk)}`}
+              >
+                {item.risk}
+              </span>
+            ) : null}
+            {!isFault5TepCard ? (
+              <span className="flex items-center gap-1 rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-cyan-200">
+                <Shield className="h-3 w-3" />
+                {item.urgency}
+              </span>
+            ) : null}
             {item.tepCase ? (
               <span className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-2 py-1 font-mono text-[9px] text-orange-200/90">
                 tep_test run {item.tepCase.simulationRun}
               </span>
             ) : null}
-            {item.failureWindowMinutes != null && (
+            {!isFault5TepCard && item.failureWindowMinutes != null ? (
               <span className="flex items-center gap-1 text-[10px] text-slate-400">
                 <Clock3 className="h-3 w-3" />
                 Est. window {item.failureWindowMinutes} min
               </span>
-            )}
+            ) : null}
           </motion.div>
 
           {item.tepCase ? (
@@ -192,18 +208,20 @@ function MaintenanceCard({
             </p>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 + index * 0.03 }}
-          >
-            <p className="text-[10px] uppercase tracking-widest text-slate-500">
-              Estimated impact (holdout test metrics)
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-400">
-              {item.impact}
-            </p>
-          </motion.div>
+          {!isFault5TepCard ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 + index * 0.03 }}
+            >
+              <p className="text-[10px] uppercase tracking-widest text-slate-500">
+                Estimated impact (holdout test metrics)
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                {item.impact}
+              </p>
+            </motion.div>
+          ) : null}
 
           <div>
             <motion.div
@@ -214,7 +232,9 @@ function MaintenanceCard({
               <span className="flex items-center gap-1">
                 <Cog className="h-3 w-3" /> Work order progress
               </span>
-              <span className="font-mono text-cyan-300">{item.progressPct}%</span>
+              <span className="font-mono text-cyan-300">
+                {isFault5TepCard ? 0 : item.progressPct}%
+              </span>
             </motion.div>
             <motion.div
               className="h-2 overflow-hidden rounded-full bg-white/[0.06]"
@@ -224,7 +244,9 @@ function MaintenanceCard({
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400"
                 initial={{ width: 0 }}
-                animate={{ width: `${item.progressPct}%` }}
+                animate={{
+                  width: `${isFault5TepCard ? 0 : item.progressPct}%`,
+                }}
                 transition={{ duration: 0.8, delay: 0.12 + index * 0.04 }}
               />
             </motion.div>
@@ -257,7 +279,6 @@ function MaintenanceCard({
 
 function TepCaseMetricsGrid({ metrics }: { metrics: MaintenanceTepCaseMetrics }) {
   const cells = [
-    { label: "Pre-fault FA", value: String(metrics.preFalseAlarms) },
     {
       label: "1st alert",
       value:
@@ -266,18 +287,7 @@ function TepCaseMetricsGrid({ metrics }: { metrics: MaintenanceTepCaseMetrics })
           : "—",
     },
     {
-      label: "Delay vs 161",
-      value:
-        metrics.detectionDelaySamples != null
-          ? String(metrics.detectionDelaySamples)
-          : "—",
-    },
-    {
-      label: "Max P(fault)",
-      value: `${(metrics.maxPFault * 100).toFixed(2)}%`,
-    },
-    {
-      label: "IDV(5) ID",
+      label: "IDV(5) Probability",
       value: `${metrics.multiclassIdv5Pct.toFixed(1)}%`,
     },
     {

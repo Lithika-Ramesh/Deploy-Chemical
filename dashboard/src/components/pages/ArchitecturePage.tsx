@@ -88,24 +88,7 @@ export function ArchitecturePage() {
         </figure>
       </GlassPanel>
 
-      {bundle?.architecture ? (
-        <GlassPanel
-          title="Classifier context (notebooks)"
-          subtitle="Same P&amp;ID view as above — this panel is metadata only"
-          accent="emerald"
-          delay={0.06}
-          className="mt-4"
-        >
-          <div className="space-y-2 p-4 text-sm text-slate-300">
-            <p className="font-[family-name:var(--font-orbitron)] text-xs font-semibold uppercase tracking-wider text-emerald-200/90">
-              {bundle.architecture.headline}
-            </p>
-            <p className="text-xs leading-relaxed text-slate-400">
-              {bundle.architecture.detail}
-            </p>
-          </div>
-        </GlassPanel>
-      ) : null}
+    
     </div>
   );
 }
