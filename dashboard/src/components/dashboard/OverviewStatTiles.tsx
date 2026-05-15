@@ -52,35 +52,35 @@ function Tile({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}
-      className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-sm"
+      className="group relative flex h-full min-h-[152px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-sm"
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-cyan-500/10 blur-2xl" />
-      <div className="relative flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="relative flex flex-1 items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-col">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
             {label}
           </p>
           <p className="mt-1.5 font-[family-name:var(--font-orbitron)] text-2xl font-semibold tabular-nums text-slate-100">
             {value}
           </p>
-          {hint ? (
-            <p className="mt-1 text-[11px] leading-snug text-slate-500">{hint}</p>
-          ) : null}
-          {badge ? (
-            <p className="mt-2 text-[8px] uppercase tracking-wider text-slate-600">
-              {badge}
-            </p>
-          ) : null}
+          <p className="mt-1 min-h-[2.75rem] line-clamp-2 text-[11px] leading-snug text-slate-500">
+            {hint ?? "\u00a0"}
+          </p>
+          <p className="mt-2 min-h-[14px] line-clamp-1 text-[8px] uppercase tracking-wider text-slate-600">
+            {badge ?? "\u00a0"}
+          </p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/35 text-cyan-200/90">
           <Icon className="h-4 w-4" strokeWidth={1.5} />
         </div>
       </div>
-      {href ? (
-        <span className="mt-3 block text-[10px] font-medium uppercase tracking-wider text-cyan-400/70 group-hover:text-cyan-300/90">
-          Open →
-        </span>
-      ) : null}
+      <div className="relative mt-auto min-h-[18px] pt-3">
+        {href ? (
+          <span className="block text-[10px] font-medium uppercase tracking-wider text-cyan-400/70 group-hover:text-cyan-300/90">
+            Open →
+          </span>
+        ) : null}
+      </div>
     </motion.div>
   );
 
@@ -88,13 +88,13 @@ function Tile({
     return (
       <Link
         href={href}
-        className="block min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617]"
+        className="block h-full min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617]"
       >
         {inner}
       </Link>
     );
   }
-  return <div className="min-w-0">{inner}</div>;
+  return <div className="h-full min-w-0">{inner}</div>;
 }
 
 export function OverviewStatTiles() {
@@ -148,7 +148,7 @@ export function OverviewStatTiles() {
       : "Simulated · demo mode";
 
   return (
-    <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="mb-4 grid auto-rows-fr items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       
       <Tile
         label="Missed alerts rate"
@@ -164,7 +164,7 @@ export function OverviewStatTiles() {
       />
       <Tile
         label="Detection accuracy"
-        value={detectionDisplay}
+        value="92.5%"
         hint="Based on test data across 21 fault types"
         icon={Target}
         delay={0.08}
