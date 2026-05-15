@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  Activity,
   AlertTriangle,
   BellRing,
   Cpu,
@@ -21,7 +20,6 @@ const links = [
   { href: "/alarm-xmeas13", label: "Alarm lab (xmeas_13)", icon: BellRing },
   { href: "/alerts", label: "Alerts & incidents", icon: AlertTriangle },
   { href: "/maintenance", label: "Maintenance", icon: Wrench },
-  { href: "/analytics", label: "AI analytics", icon: Activity },
 ] as const;
 
 export function SideNav() {

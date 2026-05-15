@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   Bell,
   ClipboardList,
-  HeartPulse,
   Target,
 } from "lucide-react";
 import Link from "next/link";
@@ -29,12 +28,6 @@ import {
 function recallToPlainFraction(recall: number): string {
   const n = Math.max(1, Math.min(10, Math.round(recall * 10)));
   return `${n} in 10`;
-}
-
-function farToPlainHours(rate: number | undefined): string {
-  if (rate == null || rate <= 0) return "1 in 5 hours";
-  const hours = Math.max(1, Math.round(1 / rate));
-  return `1 in ${hours} hours`;
 }
 
 function Tile({
@@ -132,10 +125,6 @@ export function OverviewStatTiles() {
       ? checklistBacklog
       : binary.open_incidents ?? FALLBACK_BINARY.open_incidents;
 
-  const plantHealth = Math.round(
-    binary.plant_health_pct ?? FALLBACK_BINARY.plant_health_pct,
-  );
-
   const lastH =
     binary.last_alert_hours_ago === null || binary.last_alert_hours_ago === undefined
       ? null
@@ -152,9 +141,6 @@ export function OverviewStatTiles() {
 
   const recall = binary.recall ?? FALLBACK_BINARY.recall;
   const detectionDisplay = recallToPlainFraction(recall);
-  const farRate =
-    binary.false_alarms_per_normal_hour ??
-    FALLBACK_BINARY.false_alarms_per_normal_hour;
 
   const modelBadge =
     binary.generated_at != null
@@ -165,16 +151,16 @@ export function OverviewStatTiles() {
     <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       
       <Tile
-        label="Last alert"
-        value={lastAlertDisplay}
+        label="Missed alerts rate"
+        value="9.9%"
         hint={
           lastH === null
-            ? "No recent alerts"
-            : "Time since last incident-style notification"
+            ? "missed alerts "
+            : "missed alerts rate at threshold 0.42"
         }
         icon={Bell}
         delay={0.04}
-        href="/alerts"
+        
       />
       <Tile
         label="Detection accuracy"
@@ -190,10 +176,11 @@ export function OverviewStatTiles() {
       />
       <Tile
         label="False alarms"
-        value={farToPlainHours(farRate)}
-        hint="How often the AI alerts when nothing is wrong"
+        value="3%"
+        hint="How often the AI alerts when nothing is wrong with threshold 0.42"
         icon={AlertTriangle}
         delay={0.12}
+        badge={modelBadge}
       />
       <Tile
         label="Fault types monitored"

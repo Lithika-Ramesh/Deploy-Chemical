@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import { AIStatusNarrative } from "@/components/overview/AIStatusNarrative";
 import { MaintenanceEvents } from "@/components/dashboard/MaintenanceEvents";
 import { OverviewStatTiles } from "@/components/dashboard/OverviewStatTiles";
 
@@ -43,13 +42,8 @@ export function OverviewPage() {
 
       <OverviewStatTiles />
 
-      <div className="grid min-w-0 flex-1 gap-4 xl:grid-cols-12">
-        <div className="min-w-0 xl:col-span-5 2xl:col-span-4">
-          <AIStatusNarrative />
-        </div>
-        <div className="min-w-0 xl:col-span-7 2xl:col-span-8">
-          <LiveSensorCharts />
-        </div>
+      <div className="min-w-0">
+        <LiveSensorCharts />
       </div>
 
       <div className="mt-4">

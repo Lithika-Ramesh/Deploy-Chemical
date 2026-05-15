@@ -1,4 +1,5 @@
 import { FAULT_CATALOG } from "./faultCatalog";
+import { FAULT5_MAINTENANCE_CASES } from "./fault5MaintenanceCases";
 import type { SimulationConfig } from "./mockTelemetry";
 import type { MaintenanceRecommendation, Severity } from "./types";
 
@@ -13,56 +14,7 @@ export function buildMaintenanceRecommendations(
   config: SimulationConfig,
   tick: number,
 ): MaintenanceRecommendation[] {
-  const staticList: MaintenanceRecommendation[] = [
-    {
-      id: "m-1",
-      equipment: "Stripper reboiler E-204",
-      issue: "Fouling index trending high",
-      risk: "MEDIUM",
-      impact: "~2.1% energy penalty if unaddressed within 72h",
-      steps: [
-        "Pull last 30d duty vs. UA estimate",
-        "Schedule chemical clean window",
-        "Verify steam trap farm",
-      ],
-      urgency: "P3",
-      failureWindowMinutes: 4200,
-      progressPct: 62,
-      faultId: null,
-    },
-    {
-      id: "m-2",
-      equipment: "Analyzer AT-17",
-      issue: "Validation gap vs. lab",
-      risk: "LOW",
-      impact: "Optimizer bias risk on light key",
-      steps: [
-        "Run 3-point calibration",
-        "Cross-check GC backflush cycle",
-      ],
-      urgency: "P4",
-      failureWindowMinutes: null,
-      progressPct: 28,
-      faultId: 13,
-    },
-    {
-      id: "m-3",
-      equipment: "Recycle compressor K-101",
-      issue: "Seal gas differential soft",
-      risk: "HIGH",
-      impact: "Trip risk under recycle upset",
-      steps: [
-        "Inspect seal gas regulator",
-        "Verify balance line purge",
-      ],
-      urgency: "P2",
-      failureWindowMinutes: 180,
-      progressPct: 44,
-      faultId: 7,
-    },
-  ];
-
-  if (config.mode !== "fault") return staticList;
+  if (config.mode !== "fault") return FAULT5_MAINTENANCE_CASES;
 
   const def = FAULT_CATALOG[config.faultId];
   const sev: Severity =
@@ -92,5 +44,12 @@ export function buildMaintenanceRecommendations(
     faultId: config.faultId,
   };
 
-  return [dynamic, ...staticList];
+  const fault5Match = FAULT5_MAINTENANCE_CASES.find(
+    (c) => c.faultId === config.faultId,
+  );
+  if (fault5Match) {
+    return [dynamic, fault5Match, ...FAULT5_MAINTENANCE_CASES.filter((c) => c.id !== fault5Match.id)];
+  }
+
+  return [dynamic, ...FAULT5_MAINTENANCE_CASES];
 }
