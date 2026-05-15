@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -12,6 +11,7 @@ import {
   Shield,
 } from "lucide-react";
 import { GlassPanel } from "@/components/dashboard/GlassPanel";
+import { Fault5Run78Vs171Figures } from "@/components/maintenance/Fault5Run78Vs171Figures";
 import {
   FAULT5_TEP_ONSET_SAMPLE,
   FAULT5_MAINTENANCE_CASES,
@@ -101,49 +101,8 @@ export function MaintenancePage() {
       </header>
 
       {isFault5Tep ? (
-        <div className="mb-6 grid gap-4 lg:grid-cols-2">
-          <GlassPanel
-            title="Clean vs nuisance alarms"
-            subtitle="Run 78 vs 171 · real tep_test.csv + champion binary"
-            accent="amber"
-            delay={0}
-          >
-            <motion.div
-              className="relative aspect-[12/7] w-full overflow-hidden rounded-xl border border-white/[0.06] bg-black/40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.05 }}
-            >
-              <Image
-                src="/data/fault5/03_clean_vs_run171.png"
-                alt="P(fault) and XMEAS_13 comparison for tep_test Fault 5 runs 78 and 171"
-                fill
-                className="object-contain p-2"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-            </motion.div>
-          </GlassPanel>
-          {/* <GlassPanel
-            title="Run comparison"
-            subtitle="Pre-fault false alarms · detection delay · XMEAS_13 step"
-            accent="cyan"
-            delay={0.04}
-          >
-            <motion.div
-              className="relative aspect-[3/1] w-full overflow-hidden rounded-xl border border-white/[0.06] bg-black/40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.08 }}
-            >
-              <Image
-                src="/data/fault5/04_metrics_bars.png"
-                alt="Bar chart comparing Fault 5 curated tep_test runs"
-                fill
-                className="object-contain p-2"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-            </motion.div>
-          </GlassPanel> */}
+        <div className="mb-6 min-w-0">
+          <Fault5Run78Vs171Figures />
         </div>
       ) : null}
 

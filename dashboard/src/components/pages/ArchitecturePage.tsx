@@ -9,13 +9,6 @@ import { useNotebookDashboard } from "@/context/NotebookDashboardContext";
 /** Matches `DashboardBackground` base layer */
 const DASH_BG = "none";
 
-/** Normalized hit target for the vap/liq separator PI (xmeas_13 — separator pressure). */
-const XMEAS_13_HOTSPOT = {
-  leftPct: 48.5,
-  topPct: 17.2,
-  sizePct: 4.8,
-} as const;
-
 export function ArchitecturePage() {
   const { bundle } = useNotebookDashboard();
 
@@ -54,40 +47,23 @@ export function ArchitecturePage() {
                   draggable={false}
                 />
 
-                <div
-                  className="pointer-events-none absolute"
-                  style={{
-                    left: `${XMEAS_13_HOTSPOT.leftPct}%`,
-                    top: `${XMEAS_13_HOTSPOT.topPct}%`,
-                    width: `${XMEAS_13_HOTSPOT.sizePct * 1.35}%`,
-                    aspectRatio: "1",
-                    transform: "translate(-50%, -50%)",
-                  }}
-                >
-                  <span className="absolute inset-0 rounded-full bg-red-500/35 animate-ping" />
+                {/* xmeas_13 marker — nudge with left-[px] / top-[px] on this block */}
+                <motion.div className="absolute left-[180px] top-[380px] size-12 -translate-x-1/2 -translate-y-1/2">
+                  <span className="pointer-events-none absolute inset-2 rounded-full bg-red-500/35 animate-ping" />
                   <motion.span
-                    className="absolute inset-[12%] rounded-full border-2 border-red-400/95 shadow-[0_0_22px_rgba(239,68,68,0.55)]"
+                    className="pointer-events-none absolute inset-[12%] rounded-full border-2 border-red-400/95 shadow-[0_0_22px_rgba(239,68,68,0.55)]"
                     animate={{ opacity: [0.7, 1, 0.7] }}
                     transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                   />
-                </div>
-
-                <Link
-                  href="/alarm-xmeas13"
-                  className="absolute z-10 aspect-square rounded-full outline-none ring-offset-2 ring-offset-[#020617] focus-visible:ring-2 focus-visible:ring-red-400"
-                  style={{
-                    left: `${XMEAS_13_HOTSPOT.leftPct}%`,
-                    top: `${XMEAS_13_HOTSPOT.topPct}%`,
-                    width: `${XMEAS_13_HOTSPOT.sizePct}%`,
-                    minWidth: 36,
-                    maxWidth: 56,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                  aria-label="Open alarm lab for separator pressure"
-                  title="Separator pressure — open alarm lab"
-                >
-                  <span className="sr-only">Open alarm lab for separator pressure</span>
-                </Link>
+                  <Link
+                    href="/alarm-xmeas13"
+                    className="absolute inset-0 z-10 rounded-full outline-none ring-offset-2 ring-offset-[#020617] focus-visible:ring-2 focus-visible:ring-red-400"
+                    aria-label="Open alarm lab for separator pressure"
+                    title="Separator pressure — open alarm lab"
+                  >
+                    <span className="sr-only">Open alarm lab for separator pressure</span>
+                  </Link>
+                </motion.div>
               </div>
             </div>
           </div>
