@@ -288,7 +288,7 @@ export function SimulationPage() {
             </div>
           </GlassPanel> */}
 
-          {bundle ? (
+          {/* {bundle ? (
             <GlassPanel
               title="Notebook benchmark"
               subtitle="Fault identifier metrics · validation / test splits from dashboard export"
@@ -348,7 +348,7 @@ export function SimulationPage() {
                 </span>
               </p>
             </GlassPanel>
-          ) : null}
+          ) : null} */}
         </div>
 
         <div className="space-y-4 xl:col-span-7">
