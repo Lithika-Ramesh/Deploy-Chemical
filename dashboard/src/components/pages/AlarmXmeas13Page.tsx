@@ -220,23 +220,7 @@ export function AlarmXmeas13Page() {
           <h2 className="font-[family-name:var(--font-orbitron)] text-xl font-semibold uppercase tracking-[0.14em] text-slate-100">
             xmeas_13 alarm lab
           </h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-500">
-            Deadband-latched alarm with tail-widened σ band, rate-of-change
-            pre-alarm, and
-            optional browser beep while latched — same logic as{" "}
-            <span className="font-mono text-slate-400">
-              alarm_management_xmeas13.ipynb
-            </span>
-            . The main dashboard still uses its own mock twin; notebook edits do
-            not sync automatically.             Run{" "}
-            <span className="font-mono text-cyan-200/80">
-              python scripts/export_alarm_xmeas13_dashboard.py
-            </span>{" "}
-            after the notebook cache exists to drop matching series JSON under{" "}
-            <span className="font-mono text-cyan-200/80">dashboard/public/data/</span> and copy the GIF from{" "}
-            <span className="font-mono text-cyan-200/80">outputs/figures/</span> into{" "}
-            <span className="font-mono text-cyan-200/80">dashboard/public/</span>.
-          </p>
+          
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <motion.button

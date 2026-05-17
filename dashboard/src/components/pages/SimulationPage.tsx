@@ -75,29 +75,10 @@ export function SimulationPage() {
             observe AI residuals in real time. Digital twin tick:{" "}
             <span className="font-mono text-cyan-300/90">{tick}s</span>
           </p>
-          {fault13ReplayPayload ? (
-            <p className="max-w-2xl text-[11px] leading-snug text-cyan-200/80">
-              Demo: choose{" "}
-              <span className="font-semibold text-cyan-100">Fault 13</span> and
-              press Start to replay{" "}
-              <span className="font-mono text-cyan-300/90">tep_test</span> run 1
-              with real binary/multiclass scores (JSON at ~5 samples/s).
-              {fault13ReplayActive && fault13ReplayProgress ? (
-                <span className="ml-2 font-mono text-slate-400">
-                  Sample {fault13ReplayProgress.current}/
-                  {fault13ReplayProgress.total}
-                </span>
-              ) : null}
-            </p>
-          ) : (
-            <p className="max-w-xl text-[11px] text-amber-200/70">
-              Fault 13 replay file not found — add{" "}
-              <span className="font-mono">fault13_replay.json</span> under{" "}
-              <span className="font-mono">public/data</span> (run{" "}
-              <span className="font-mono">scripts/export_fault13_replay.py</span>
-              ).
-            </p>
-          )}
+          
+          
+           
+          
         </div>
         <AnimatePresence mode="wait">
           {emergencyMode && (
@@ -145,21 +126,7 @@ export function SimulationPage() {
                 </select>
               </label>
 
-              <div>
-                <div className="flex justify-between text-[10px] uppercase tracking-widest text-slate-500">
-                  <span>Severity stage</span>
-                  <span className="font-mono text-cyan-300">{severity} / 5</span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={5}
-                  value={severity}
-                  onChange={(e) => setSeverity(Number(e.target.value))}
-                  className="mt-2 w-full accent-cyan-400"
-                />
-              </div>
-
+              
               <div className="flex flex-wrap gap-2">
                 <motion.button
                   type="button"

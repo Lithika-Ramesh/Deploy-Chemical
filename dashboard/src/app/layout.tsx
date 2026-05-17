@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIFI Smart Factory · TEP Digital Twin",
+  title: "anomex · TEP Digital Twin",
   description:
     "Industry 4.0 predictive fault monitoring for chemical manufacturing (Tennessee Eastman Process).",
 };

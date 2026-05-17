@@ -31,7 +31,7 @@ function workOrder(
 ): MaintenanceRecommendation {
   return {
     id,
-    equipment: `${F5.affectedSystems.join(" · ")} · tep_test run ${run}`,
+    equipment: `tep_test run ${run}`,
     issue,
     risk,
     impact,
@@ -56,7 +56,7 @@ export const FAULT5_MAINTENANCE_CASES: MaintenanceRecommendation[] = [
   workOrder(
     "f5-pm-78",
     78,
-    "Clean hero",
+    "",
     "IDV(5) condenser CW inlet T step — instant alert at injection with zero pre-fault alarms",
     "tep_test run 78: pre-FA 0 · 1st alert sample 161 · delay 0 · max P(fault) 99.996% · IDV(5) label 98% · ΔXMEAS_13 +2.74",
     "LOW",
@@ -70,7 +70,7 @@ export const FAULT5_MAINTENANCE_CASES: MaintenanceRecommendation[] = [
       maxPFault: 0.999964,
       multiclassIdv5Pct: 98.375,
       xmeas13Delta: 2.743625,
-      caseTag: "Clean hero",
+      caseTag: "",
     },
     [
       "Use as default simulation replay when demoing Fault 5",
@@ -80,7 +80,7 @@ export const FAULT5_MAINTENANCE_CASES: MaintenanceRecommendation[] = [
   workOrder(
     "f5-pm-148",
     148,
-    "Strong separator step (−)",
+    "",
     "Large negative separator pressure step after condenser CW upset — high visual signature",
     "tep_test run 148: pre-FA 0 · alert sample 162 (1-sample delay) · ΔXMEAS_13 −7.83 · IDV(5) 98%",
     "HIGH",
@@ -94,7 +94,7 @@ export const FAULT5_MAINTENANCE_CASES: MaintenanceRecommendation[] = [
       maxPFault: 0.999933,
       multiclassIdv5Pct: 98.123,
       xmeas13Delta: -7.83125,
-      caseTag: "Strong step (−)",
+      caseTag: "",
     },
     [
       "Prioritize separator PIT calibration and condenser duty check",

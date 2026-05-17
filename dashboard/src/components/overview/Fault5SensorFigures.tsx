@@ -14,6 +14,7 @@ const FIGURES: readonly Fault5Figure[] = [
     alt: "XMEAS_22 rolling mean: Fault 5 run 78 vs normal run 1",
     accent: "cyan",
     delay: 0,
+    priority: true,
   },
   {
     src: "/data/fault5/09_xmeas_11_run78_vs_normal.png",

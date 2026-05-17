@@ -32,10 +32,9 @@ export function SideNav() {
           <Cpu className="h-4 w-4 text-cyan-300" />
         </div>
         <div>
-          <p className="font-[family-name:var(--font-orbitron)] text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-            AIFI
+          <p className="font-[family-name:var(--font-orbitron)] text-sm font-semibold uppercase tracking-[0.14em] text-slate-100">
+            anomex
           </p>
-          <p className="text-xs font-medium text-slate-200">TEP Command</p>
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-2">

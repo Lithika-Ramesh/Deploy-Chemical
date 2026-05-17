@@ -19,11 +19,7 @@ export function OverviewPage() {
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
           A clear, operator-first view of plant health, AI monitoring, and key
           Fault&nbsp;5 process traces from{" "}
-          <span className="font-mono text-cyan-200/80">tep_test.csv</span>. KPI
-          tiles load optional metrics from{" "}
-          <span className="font-mono text-cyan-200/80">public/data/</span> when
-          you publish JSON there; otherwise the UI uses built-in demonstration
-          values.
+         
         </p>
       </div>
 

@@ -58,54 +58,7 @@ export function MaintenancePage() {
         <h2 className="font-[family-name:var(--font-orbitron)] text-xl font-semibold uppercase tracking-[0.14em] text-slate-100">
           AI predictive maintenance
         </h2>
-        <p className="mt-1 max-w-3xl text-sm text-slate-500">
-          {isFault5Tep ? (
-            <>
-              Work orders below are grounded in{" "}
-              <span className="font-mono text-cyan-300/90">tep_test.csv</span>{" "}
-              Fault&nbsp;5 (condenser CW inlet temperature step) curated runs —
-              same metrics as{" "}
-              <span className="font-mono text-slate-400">
-                outputs/figures/fault5
-              </span>
-              . Injection at sample{" "}
-              <span className="font-mono text-orange-300/90">
-                {FAULT5_TEP_ONSET_SAMPLE}
-              </span>
-              .
-            </>
-          ) : (
-            <>
-              AI-ranked work orders synchronized with the live twin (health{" "}
-              <span className="font-mono text-cyan-300">
-                {snapshot.systemHealthPct.toFixed(0)}%
-              </span>
-              ).
-            </>
-          )}
-          {bundle ? (
-            <span className="mt-1 block text-emerald-200/85">
-              Data from{" "}
-              <span className="font-mono text-emerald-100/90">
-                tep_notebook_dashboard.json
-              </span>{" "}
-              (generated {new Date(bundle.generatedAt).toLocaleDateString()}).
-            </span>
-          ) : null}
-        </p>
-        {isFault5Tep ? (
-          <p className="mt-2 text-[11px] text-slate-500">
-            Replay a run on{" "}
-            <Link
-              href="/simulation"
-              className="inline-flex items-center gap-1 text-cyan-300/90 underline-offset-2 hover:underline"
-            >
-              Fault simulation
-              <ExternalLink className="h-3 w-3" />
-            </Link>{" "}
-            (select Fault 5 when replay JSON is available).
-          </p>
-        ) : null}
+
       </header>
 
       {isFault5Tep ? (
@@ -142,7 +95,7 @@ function MaintenanceCard({
         title={item.equipment}
         subtitle={
           isFault5TepCard
-            ? item.tepCase!.caseTag
+            ? undefined
             : item.tepCase
               ? `${item.tepCase.caseTag} · urgency ${item.urgency} · ${item.risk} risk`
               : `Urgency ${item.urgency} · ${item.risk} risk`

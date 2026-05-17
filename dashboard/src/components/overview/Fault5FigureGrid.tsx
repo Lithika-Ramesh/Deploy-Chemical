@@ -12,6 +12,8 @@ export type Fault5Figure = {
   alt: string;
   accent: "cyan" | "blue" | "amber" | "emerald" | "red";
   delay?: number;
+  /** Set on above-the-fold figures to improve LCP (preloads + eager load). */
+  priority?: boolean;
 };
 
 export interface Fault5FigureGridProps {
@@ -54,6 +56,7 @@ export function Fault5FigureGrid({
                 src={fig.src}
                 alt={fig.alt}
                 fill
+                priority={fig.priority}
                 className="object-contain p-1"
                 sizes="(max-width: 1024px) 100vw, 33vw"
               />
