@@ -9,18 +9,18 @@ import { FAULT5_TEP_ONSET_SAMPLE } from "@/lib/fault5MaintenanceCases";
 const FIGURES: readonly Fault5Figure[] = [
   {
     src: "/data/fault5/08_xmeas_22_run78_vs_normal.png",
-    title: "Compressor CW outlet",
+    title: "Separator cooling water outlet temperature",
     subtitle: "XMEAS_22 · tep_test run 78 vs normal run 1",
-    alt: "XMEAS_22 rolling mean: Fault 5 run 78 vs normal run 1",
+    alt: "XMEAS_22 separator cooling water outlet temperature: Fault 5 run 78 vs normal run 1",
     accent: "cyan",
     delay: 0,
     priority: true,
   },
   {
     src: "/data/fault5/09_xmeas_11_run78_vs_normal.png",
-    title: "Reactor feed flow",
+    title: "Product separator temperature",
     subtitle: "XMEAS_11 · tep_test run 78 vs normal run 1",
-    alt: "XMEAS_11 rolling mean: Fault 5 run 78 vs normal run 1",
+    alt: "XMEAS_11 product separator temperature: Fault 5 run 78 vs normal run 1",
     accent: "blue",
     delay: 0.04,
   },

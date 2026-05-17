@@ -69,7 +69,7 @@ export function TopNav() {
             )}
           </div>
           <p className="text-[11px] text-slate-500">
-            Predictive fault intelligence · SCADA-grade monitoring
+            Predictive fault intelligence
           </p>
         </div>
       </div>
