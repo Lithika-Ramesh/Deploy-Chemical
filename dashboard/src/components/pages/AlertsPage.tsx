@@ -68,17 +68,7 @@ export function AlertsPage() {
         <h2 className="font-[family-name:var(--font-orbitron)] text-xl font-semibold uppercase tracking-[0.14em] text-slate-100">
           Alerts & incidents
         </h2>
-        <p className="mt-1 max-w-2xl text-sm text-slate-500">
-          Industrial SOC view — active warnings, historical incidents, and AI
-          diagnoses with operator guidance.
-          {nbIncidents.length > 0 ? (
-            <span className="mt-1 block text-emerald-200/80">
-              Showing incidents from{" "}
-              <span className="font-mono text-emerald-100/90">tep_notebook_dashboard.json</span>{" "}
-              (04a/04b export).
-            </span>
-          ) : null}
-        </p>
+        
       </header>
 
       <GlassPanel

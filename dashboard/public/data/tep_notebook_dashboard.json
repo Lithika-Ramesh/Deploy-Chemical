@@ -82,7 +82,7 @@
   "maintenance": [
     {
       "id": "f5-pm-78",
-      "equipment": "Overhead condenser \u00b7 CW return \u00b7 tep_test run 78",
+      "equipment": "tep_test run 78",
       "issue": "IDV(5) step \u2014 instant alert at injection, zero pre-fault alarms",
       "risk": "LOW",
       "impact": "pre-FA 0 \u00b7 1st alert 161 \u00b7 delay 0 \u00b7 max P(fault) 99.996% \u00b7 IDV(5) 98.4% \u00b7 \u0394XMEAS_13 +2.74",
@@ -106,12 +106,12 @@
         "maxPFault": 0.9999639987945556,
         "multiclassIdv5Pct": 98.375,
         "xmeas13Delta": 2.74362500000052,
-        "caseTag": "Clean hero"
+        "caseTag": ""
       }
     },
     {
       "id": "f5-pm-148",
-      "equipment": "Overhead condenser \u00b7 CW return \u00b7 tep_test run 148",
+      "equipment": "tep_test run 148",
       "issue": "Large negative XMEAS_13 step after condenser CW upset",
       "risk": "HIGH",
       "impact": "pre-FA 0 \u00b7 1st alert 162 \u00b7 delay 1 \u00b7 max P(fault) 99.993% \u00b7 IDV(5) 98.1% \u00b7 \u0394XMEAS_13 -7.83",
@@ -134,7 +134,7 @@
         "maxPFault": 0.9999327659606934,
         "multiclassIdv5Pct": 98.1226533166458,
         "xmeas13Delta": -7.831249999999727,
-        "caseTag": "Strong step (\u2212)"
+        "caseTag": ""
       }
     }
   ],

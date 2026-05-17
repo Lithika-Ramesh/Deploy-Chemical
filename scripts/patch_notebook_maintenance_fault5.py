@@ -16,7 +16,7 @@ F5_DETAIL = [
 ]
 
 CASES = [
-    ("f5-pm-78", "Clean hero", "LOW", "P4", 95, "MEDIUM", [
+    ("f5-pm-78",  "LOW", "P4", 95, "MEDIUM", [
         "Use as default Fault 5 simulation replay",
         "Compare XMEAS_13 and XMV_11 to historian",
     ]),
@@ -24,7 +24,7 @@ CASES = [
         "Review alarm rationalization on binary score (threshold 0.35)",
         "Pair briefing with clean run 78",
     ]),
-    ("f5-pm-148", "Strong step (−)", "HIGH", "P2", 55, "HIGH", [
+    ("f5-pm-148", "HIGH", "P2", 55, "HIGH", [
         "Prioritize separator PIT and condenser duty",
     ]),
     ("f5-pm-429", "Strong step (+)", "HIGH", "P2", 58, "HIGH", [
@@ -63,7 +63,7 @@ def main() -> None:
         maintenance.append(
             {
                 "id": _id,
-                "equipment": f"Overhead condenser · CW return · tep_test run {run}",
+                "equipment": f"tep_test run {run}",
                 "issue": issue_map.get(run, row.description),
                 "risk": risk,
                 "impact": (
@@ -87,7 +87,7 @@ def main() -> None:
                     "maxPFault": float(row.max_p_fault),
                     "multiclassIdv5Pct": float(row.multiclass_pct),
                     "xmeas13Delta": float(row.xmeas_13_delta),
-                    "caseTag": tag,
+                    "caseTag": "",
                 },
             }
         )
