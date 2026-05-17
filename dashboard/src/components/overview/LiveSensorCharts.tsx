@@ -37,7 +37,7 @@ const CW_OUT = {
   key: "comp_cw_outlet_temp" as const,
   min: 75,
   max: 81,
-  label: "Compressor CW outlet — XMEAS_22",
+  label: "Separator cooling water outlet temperature — XMEAS_22",
   unit: "°C",
 };
 

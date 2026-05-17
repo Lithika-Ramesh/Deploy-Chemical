@@ -44,7 +44,7 @@ export function ArchitecturePage() {
                 />
 
                 {/* xmeas_13 marker — nudge with left-[px] / top-[px] on this block */}
-                <motion.div className="absolute left-[150px] top-[300px] size-12 -translate-x-1/2 -translate-y-1/2">
+                <motion.div className="absolute left-[129px] top-[82px] size-12 -translate-x-1/2 -translate-y-1/2">
                   <span className="pointer-events-none absolute inset-2 rounded-full bg-red-500/35 animate-ping" />
                   <motion.span
                     className="pointer-events-none absolute inset-[12%] rounded-full border-2 border-red-400/95 shadow-[0_0_22px_rgba(239,68,68,0.55)]"
