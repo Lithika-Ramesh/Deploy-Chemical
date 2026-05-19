@@ -213,3 +213,8 @@ outputs/
 
 # TEP raw data and local parquet cache (large; not versioned)
 dataset/
+
+# Regenerated processed CSVs and loose model dumps at repo root
+data/
+*.joblib
+multiclass_champion_probabilities.csv

@@ -1,6 +1,6 @@
 """
 Export Fault 13 / simulationRun 1 from tep_test.csv with real model scores
-for the dashboard demo (see md/dashboard_brief_lithika.md).
+for the dashboard demo.
 
 Uses the same rolling-feature contract as notebooks/04a_Binary_Classifier.ipynb:
 run_key grouping, windows [10,20,30,50,100], column names *_roll_mean_* / *_roll_std_*.
